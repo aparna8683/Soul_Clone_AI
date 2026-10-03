@@ -70,7 +70,7 @@ Rules:
             }
         ],
         temperature: 0.1,
-        max_completion_tokens: 1800,
+        max_completion_tokens: 700,
         response_format: { type: "json_object" }
     }, {
         timeout: 45000
