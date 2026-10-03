@@ -9,6 +9,7 @@ import {
     generatePackageFile
 } from "../generator/reactGenerator.js";
 import { validateAndRepairBuild } from "../generator/buildValidator.js";
+import { startPreviewServer } from "../preview/previewServer.js";
 
 const router = express.Router();
 
@@ -56,11 +57,18 @@ Keep the exact same structure as the current React Specification.
         const generatedDir = path.resolve("generated-site");
         const buildResult = await validateAndRepairBuild(generatedDir, 2);
 
+        let previewUrl = null;
+        if (buildResult.success) {
+            previewUrl = await startPreviewServer(generatedDir);
+            console.log("👀 Preview available at:", previewUrl);
+        }
+
         res.json({
             reactSpec: modifiedReactSpec,
             appCode,
             stylesCode,
-            buildResult
+            buildResult,
+            previewUrl
         });
 
     } catch (error) {

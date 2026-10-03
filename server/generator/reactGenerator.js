@@ -28,6 +28,8 @@ export async function generateReactSpec(
                 y: section.position?.y,
                 width: section.size?.width,
                 height: section.size?.height,
+                columns: section.columns,
+                isFullWidth: section.size?.width > 1000,
                 background: section.backgroundColor,
                 display: section.display
             })),
@@ -45,8 +47,8 @@ export async function generateReactSpec(
 
             buttons: websiteSpec.content.buttons
                 .slice(0, 12)
-                .map((button) => button.text)
-                .filter(Boolean)
+                .filter((button) => button.text)
+                .map((button) => ({ text: button.text, url: button.url }))
         },
 
         design: {
@@ -95,10 +97,12 @@ Use exactly this structure:
             "type": "navbar | hero | features | stats | customers | resources | cta | footer",
             "title": "string",
             "description": "string",
-            "buttons": ["string"],
-            "layout": "left | center | right | split | grid",
+            "buttons": [{"text": "string", "url": "string"}],
+            "layout": "full | center | split | grid | wide",
+            "columns": 1,
             "background": "string",
             "image": "string",
+            "imageAspectRatio": "auto | square | video | wide",
             "navItems": ["string"],
             "items": [
                 {
@@ -213,614 +217,515 @@ function resolveImageUrl(
 // 3. Generate App.jsx
 // ============================================================
 
-export function createAppComponent(
-    reactSpec,
-    websiteSpec
-) {
-    // THIS WAS MISSING IN THE PREVIOUS VERSION.
-    const sections = reactSpec.sections || [];
 
-    const getSiteName = () => {
-        const pageTitle = websiteSpec?.metadata?.title || "";
-        if (pageTitle) {
-            return pageTitle.split("|")[0].trim();
-        }
-        try {
-            const hostname = new URL(websiteSpec.metadata.url).hostname.replace(/^www\./, "").split(".")[0];
-            return hostname.charAt(0).toUpperCase() + hostname.slice(1);
-        } catch {
-            return "Website";
-        }
-    };
-    
-    const siteName = getSiteName();
-    
-    console.log(
-        "🖼️ Hero image:",
-        resolveImageUrl(
-            sections.find((section) => section.type === "hero")?.image,
-            websiteSpec
-        )
-    );
+function slugify(value = "") {
+  return String(value)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
+function createAppComponent(reactSpec, websiteSpec) {
+  const sections = reactSpec.sections || [];
 
-    // --------------------------------------------------------
-    // Buttons
-    // --------------------------------------------------------
+  const getSiteName = () => {
+    const title = websiteSpec?.metadata?.title;
 
-    const renderButtons = (buttons = []) => {
-        if (!buttons.length) {
-            return "";
-        }
+    if (title && title.trim()) {
+      return title.split("|")[0].trim();
+    }
+
+    try {
+      return new URL(websiteSpec?.metadata?.url).hostname
+        .replace("www.", "")
+        .split(".")[0];
+    } catch {
+      return "Website";
+    }
+  };
+
+  const siteName = getSiteName();
+
+  const slugify = (value = "") =>
+    String(value)
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+  console.log("🏷️ Generated site name:", siteName);
+
+  const renderButtons = (buttons = []) => {
+    if (!buttons || buttons.length === 0) {
+      return "";
+    }
+
+    return buttons
+      .map((button, index) => {
+        const text = button.text || button;
+        const url = button.url || "#";
+        const isExternal = url.startsWith("http") && !url.includes(websiteSpec.metadata?.url || "example.com");
+        const target = isExternal ? 'target="_blank" rel="noopener noreferrer"' : '';
+        
+        return `
+          <a
+            href="${escapeHtml(url)}"
+            className="${index === 0 ? "primary-btn" : "secondary-btn"}"
+            ${target}
+          >
+            ${escapeHtml(text)}
+          </a>
+        `;
+      })
+      .join("");
+  };
+
+  const renderItems = (items = []) => {
+    if (!items || items.length === 0) {
+      return "";
+    }
+
+    return items
+      .map(
+        (item) => `
+          <div className="content-card">
+            ${
+              item.image
+                ? `
+                  <div className={`card-image aspect-${item.imageAspectRatio || "auto"}`}>
+                    <img
+                      src="${escapeHtml(
+                        resolveImageUrl(item.image, websiteSpec)
+                      )}"
+                      alt="${escapeHtml(item.title || "")}"
+                      onError={(e) => { e.target.style.display = 'none' }}
+                    />
+                  </div>
+                `
+                : ""
+            }
+
+            <div className="card-content">
+              ${
+                item.title
+                  ? `<h3>${escapeHtml(item.title)}</h3>`
+                  : ""
+              }
+
+              ${
+                item.description
+                  ? `<p>${escapeHtml(item.description)}</p>`
+                  : ""
+              }
+            </div>
+          </div>
+        `
+      )
+      .join("");
+  };
+
+  const sectionCode = sections
+    .map((section, sectionIndex) => {
+      const type = section.type || "section";
+
+      const sectionId =
+        slugify(section.title) ||
+        `${type}-${sectionIndex + 1}`;
+
+      /*
+       * NAVBAR
+       */
+      if (type === "navbar") {
+        const navItems = section.navItems || [];
 
         return `
-            <div className="hero-buttons">
-                ${buttons
-                    .map(
-                        (button) => `
-                            <button className="primary-button">
-                                ${escapeHtml(button)}
-                            </button>
-                        `
-                    )
-                    .join("")}
+          <header className="navbar">
+            <div className="navbar-inner">
+
+              <a href="#top" className="brand">
+                ${escapeHtml(siteName)}
+              </a>
+
+              <button
+                className="mobile-menu-button"
+                onClick={toggleMenu}
+                aria-label="Toggle navigation"
+              >
+                {isMobileMenuOpen ? "✕" : "☰"}
+              </button>
+
+              <nav className={"nav-links " + (isMobileMenuOpen ? "open" : "")}>
+                ${navItems
+                  .map((item) => {
+                    const anchor = slugify(item);
+
+                    return `
+                      <a
+                        href="#${anchor}"
+                        onClick={closeMenu}
+                      >
+                        ${escapeHtml(item)}
+                      </a>
+                    `;
+                  })
+                  .join("")}
+              </nav>
+
             </div>
+          </header>
         `;
-    };
+      }
 
+      /*
+       * HERO
+       */
+      if (type === "hero") {
+        const imageUrl = resolveImageUrl(
+          section.image,
+          websiteSpec
+        );
 
-    // --------------------------------------------------------
-    // Cards
-    // --------------------------------------------------------
+        return `
+          <section
+            id="${sectionId}"
+            className={`hero layout-${section.layout || "default"} ${section.background ? "has-bg" : ""}`}
+          >
+            <div className="hero-content">
 
-    const renderItems = (items = []) => {
-        return items
-            .map((item) => {
+              ${
+                section.title
+                  ? `
+                    <h1>
+                      ${escapeHtml(section.title)}
+                    </h1>
+                  `
+                  : ""
+              }
 
-                const imageUrl = resolveImageUrl(
-                    item.image,
-                    websiteSpec
-                );
+              ${
+                section.description
+                  ? `
+                    <p className="hero-description">
+                      ${escapeHtml(section.description)}
+                    </p>
+                  `
+                  : ""
+              }
 
-                return `
-                    <article className="card">
+              <div className="hero-actions">
+                ${renderButtons(section.buttons)}
+              </div>
+
+            </div>
+
+            ${
+              imageUrl
+                ? `
+                  <div className={`hero-image aspect-${section.imageAspectRatio || "auto"}`}>
+                    <img
+                      src="${escapeHtml(imageUrl)}"
+                      alt="${escapeHtml(section.title || "Hero image")}"
+                    />
+                  </div>
+                `
+                : ""
+            }
+
+          </section>
+        `;
+      }
+
+      /*
+       * STATS
+       */
+      if (type === "stats") {
+        return `
+          <section
+            id="${sectionId}"
+            className={`section stats-section layout-${section.layout || "default"} cols-${section.columns || 4}`}
+          >
+
+            ${
+              section.title
+                ? `
+                  <div className="section-heading">
+                    <h2>
+                      ${escapeHtml(section.title)}
+                    </h2>
+                  </div>
+                `
+                : ""
+            }
+
+            <div className="stats-grid">
+              ${
+                (section.items || [])
+                  .map(
+                    (item) => `
+                      <div className="stat-card">
 
                         ${
-                            imageUrl
-                                ? `
-                                    <div className="card-image">
-                                        <img
-                                            src="${escapeHtml(imageUrl)}"
-                                            alt="${escapeHtml(
-                                                item.title || ""
-                                            )}"
-                                            loading="lazy"
-                                        />
-                                    </div>
-                                `
-                                : ""
+                          item.title
+                            ? `
+                              <div className="stat-value">
+                                ${escapeHtml(item.title)}
+                              </div>
+                            `
+                            : ""
                         }
-
-                        <div className="card-content">
-
-                            ${
-                                item.title
-                                    ? `
-                                        <h3>
-                                            ${escapeHtml(
-                                                item.title
-                                            )}
-                                        </h3>
-                                    `
-                                    : ""
-                            }
-
-                            ${
-                                item.description
-                                    ? `
-                                        <p>
-                                            ${escapeHtml(
-                                                item.description
-                                            )}
-                                        </p>
-                                    `
-                                    : ""
-                            }
-
-                        </div>
-
-                    </article>
-                `;
-            })
-            .join("");
-    };
-
-
-    // ========================================================
-    // Render sections
-    // ========================================================
-
-    const sectionCode = sections
-        .map((section) => {
-
-            const type = section.type;
-
-
-            // =================================================
-            // NAVBAR
-            // =================================================
-
-            if (type === "navbar") {
-                const navItems =
-                    section.navItems ||
-                    (section.items || [])
-                        .map((item) => item.title)
-                        .filter(Boolean);
-
-                return `
-                    <header className="navbar">
-                        <div className="navbar-inner">
-                            <a href="#top" className="logo">
-                                ${escapeHtml(
-                                    section.title && section.title !== "Website"
-                                        ? section.title
-                                        : siteName
-                                )}
-                            </a>
-
-                            <nav className={\`nav-links \${isMobileMenuOpen ? 'open' : ''}\`}>
-                                ${navItems
-                                    .map((item) => {
-                                        const anchor = item.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                                        return `
-                                            <a href="#${anchor}" onClick={closeMenu}>
-                                                ${escapeHtml(item)}
-                                            </a>
-                                        `;
-                                    })
-                                    .join("")}
-                            </nav>
-
-                            <button
-                                className="mobile-menu"
-                                aria-label="Open navigation"
-                                onClick={toggleMenu}
-                            >
-                                ☰
-                            </button>
-                        </div>
-                    </header>
-                `;
-            }
-
-
-            // =================================================
-            // HERO
-            // =================================================
-
-            if (type === "hero") {
-
-                const imageUrl =
-                    resolveImageUrl(
-                        section.image,
-                        websiteSpec
-                    );
-
-                const layoutClass =
-                    section.layout === "split"
-                        ? "hero-split"
-                        : "";
-
-                return `
-                    <section
-                        className="hero ${layoutClass}"
-                        ${
-                            section.background
-                                ? `style="background:${escapeHtml(
-                                      section.background
-                                  )}"`
-                                : ""
-                        }
-                    >
-
-                        <div className="hero-content">
-
-                            ${
-                                section.title
-                                    ? `
-                                        <h1>
-                                            ${escapeHtml(
-                                                section.title
-                                            )}
-                                        </h1>
-                                    `
-                                    : ""
-                            }
-
-                            ${
-                                section.description
-                                    ? `
-                                        <p>
-                                            ${escapeHtml(
-                                                section.description
-                                            )}
-                                        </p>
-                                    `
-                                    : ""
-                            }
-
-                            ${renderButtons(
-                                section.buttons
-                            )}
-
-                        </div>
 
                         ${
-                            imageUrl
-                                ? `
-                                    <div className="hero-visual">
-
-                                        <img
-                                            src="${escapeHtml(
-                                                imageUrl
-                                            )}"
-                                            alt="Hero visual"
-                                        />
-
-                                    </div>
-                                `
-                                : ""
+                          item.description
+                            ? `
+                              <p>
+                                ${escapeHtml(item.description)}
+                              </p>
+                            `
+                            : ""
                         }
 
-                    </section>
-                `;
+                      </div>
+                    `
+                  )
+                  .join("")
+              }
+            </div>
+
+          </section>
+        `;
+      }
+
+      /*
+       * FEATURES
+       */
+      if (type === "features") {
+        return `
+          <section
+            id="${sectionId}"
+            className={`section features-section layout-${section.layout || "default"} cols-${section.columns || 3}`}
+          >
+
+            ${
+              section.title
+                ? `
+                  <div className="section-heading">
+                    <h2>
+                      ${escapeHtml(section.title)}
+                    </h2>
+                  </div>
+                `
+                : ""
             }
 
+            <div className="features-grid">
+              ${renderItems(section.items)}
+            </div>
 
-            // =================================================
-            // STATS
-            // =================================================
+          </section>
+        `;
+      }
 
-            if (type === "stats") {
+      /*
+       * CUSTOMERS
+       */
+      if (type === "customers") {
+        return `
+          <section
+            id="${sectionId}"
+            className={`section customers layout-${section.layout || "default"} cols-${section.columns || 3}`}
+          >
 
-                return `
-                    <section id={section.title ? section.title.toLowerCase().replace(/[^a-z0-9]/g, "-") : undefined} className="stats-section">
-
-                        <div className="stats-grid">
-
-                            ${(section.items || [])
-                                .map(
-                                    (item) => `
-                                        <div className="stat-card">
-
-                                            <h3>
-                                                ${escapeHtml(
-                                                    item.title || ""
-                                                )}
-                                            </h3>
-
-                                            ${
-                                                item.description
-                                                    ? `
-                                                        <p>
-                                                            ${escapeHtml(
-                                                                item.description
-                                                            )}
-                                                        </p>
-                                                    `
-                                                    : ""
-                                            }
-
-                                        </div>
-                                    `
-                                )
-                                .join("")}
-
-                        </div>
-
-                    </section>
-                `;
+            ${
+              section.title
+                ? `
+                  <div className="section-heading">
+                    <h2>
+                      ${escapeHtml(section.title)}
+                    </h2>
+                  </div>
+                `
+                : ""
             }
 
+            <div className="customers-grid">
+              ${renderItems(section.items)}
+            </div>
 
-            // =================================================
-            // FEATURES
-            // =================================================
+          </section>
+        `;
+      }
 
-            if (type === "features") {
+      /*
+       * RESOURCES
+       */
+      if (type === "resources") {
+        return `
+          <section
+            id="${sectionId}"
+            className={`section resources layout-${section.layout || "default"} cols-${section.columns || 3}`}
+          >
 
-                return `
-                    <section
-                        className="section features-section"
-                        ${
-                            section.background
-                                ? `style="background:${escapeHtml(
-                                      section.background
-                                  )}"`
-                                : ""
-                        }
-                    >
-
-                        <div className="section-header">
-
-                            ${
-                                section.title
-                                    ? `
-                                        <h2>
-                                            ${escapeHtml(
-                                                section.title
-                                            )}
-                                        </h2>
-                                    `
-                                    : ""
-                            }
-
-                            ${
-                                section.description
-                                    ? `
-                                        <p>
-                                            ${escapeHtml(
-                                                section.description
-                                            )}
-                                        </p>
-                                    `
-                                    : ""
-                            }
-
-                        </div>
-
-                        <div className="card-grid">
-
-                            ${renderItems(
-                                section.items
-                            )}
-
-                        </div>
-
-                    </section>
-                `;
+            ${
+              section.title
+                ? `
+                  <div className="section-heading">
+                    <h2>
+                      ${escapeHtml(section.title)}
+                    </h2>
+                  </div>
+                `
+                : ""
             }
 
+            <div className="resources-grid">
+              ${renderItems(section.items)}
+            </div>
 
-            // =================================================
-            // CUSTOMERS
-            // =================================================
+          </section>
+        `;
+      }
 
-            if (type === "customers") {
+      /*
+       * CTA
+       */
+      if (type === "cta") {
+        return `
+          <section
+            id="${sectionId}"
+            className="cta"
+          >
 
-                return `
-                    <section id={section.title ? section.title.toLowerCase().replace(/[^a-z0-9]/g, "-") : undefined} className="section customers">
-
-                        ${
-                            section.title
-                                ? `
-                                    <div className="section-header">
-
-                                        <h2>
-                                            ${escapeHtml(
-                                                section.title
-                                            )}
-                                        </h2>
-
-                                        ${
-                                            section.description
-                                                ? `
-                                                    <p>
-                                                        ${escapeHtml(
-                                                            section.description
-                                                        )}
-                                                    </p>
-                                                `
-                                                : ""
-                                        }
-
-                                    </div>
-                                `
-                                : ""
-                        }
-
-                        <div className="customer-grid">
-
-                            ${renderItems(
-                                section.items
-                            )}
-
-                        </div>
-
-                    </section>
-                `;
+            ${
+              section.title
+                ? `
+                  <h2>
+                    ${escapeHtml(section.title)}
+                  </h2>
+                `
+                : ""
             }
 
-
-            // =================================================
-            // RESOURCES
-            // =================================================
-
-            if (type === "resources") {
-
-                return `
-                    <section id={section.title ? section.title.toLowerCase().replace(/[^a-z0-9]/g, "-") : undefined} className="section resources">
-
-                        <div className="section-header">
-
-                            ${
-                                section.title
-                                    ? `
-                                        <h2>
-                                            ${escapeHtml(
-                                                section.title
-                                            )}
-                                        </h2>
-                                    `
-                                    : ""
-                            }
-
-                            ${
-                                section.description
-                                    ? `
-                                        <p>
-                                            ${escapeHtml(
-                                                section.description
-                                            )}
-                                        </p>
-                                    `
-                                    : ""
-                            }
-
-                        </div>
-
-                        <div className="card-grid">
-
-                            ${renderItems(
-                                section.items
-                            )}
-
-                        </div>
-
-                    </section>
-                `;
+            ${
+              section.description
+                ? `
+                  <p>
+                    ${escapeHtml(section.description)}
+                  </p>
+                `
+                : ""
             }
 
+            <div className="cta-actions">
+              ${renderButtons(section.buttons)}
+            </div>
 
-            // =================================================
-            // CTA
-            // =================================================
+          </section>
+        `;
+      }
 
-            if (type === "cta") {
+      /*
+       * FOOTER
+       */
+      if (type === "footer") {
+        const links = section.navItems || [];
 
-                return `
-                    <section className="cta">
+        return `
+          <footer className="footer">
 
-                        <div className="cta-content">
+            <div className="footer-inner">
 
-                            ${
-                                section.title
-                                    ? `
-                                        <h2>
-                                            ${escapeHtml(
-                                                section.title
-                                            )}
-                                        </h2>
-                                    `
-                                    : ""
-                            }
+              <div className="footer-brand">
+                ${escapeHtml(siteName)}
+              </div>
 
-                            ${
-                                section.description
-                                    ? `
-                                        <p>
-                                            ${escapeHtml(
-                                                section.description
-                                            )}
-                                        </p>
-                                    `
-                                    : ""
-                            }
+              <div className="footer-links">
 
-                            ${renderButtons(
-                                section.buttons
-                            )}
+                ${links
+                  .map(
+                    (link) => `
+                      <a
+                        href="#${slugify(link)}"
+                        onClick={closeMenu}
+                      >
+                        ${escapeHtml(link)}
+                      </a>
+                    `
+                  )
+                  .join("")}
 
-                        </div>
+              </div>
 
-                    </section>
-                `;
-            }
+            </div>
 
+          </footer>
+        `;
+      }
 
-            // =================================================
-            // FOOTER
-            // =================================================
+      /*
+       * FALLBACK SECTION
+       */
+      return `
+        <section
+          id="${sectionId}"
+          className={`section generic-section layout-${section.layout || "default"}`}
+        >
 
-            if (type === "footer") {
+          ${
+            section.title
+              ? `
+                <h2>
+                  ${escapeHtml(section.title)}
+                </h2>
+              `
+              : ""
+          }
 
-                const footerLinks =
-                    section.navItems ||
-                    (section.items || [])
-                        .map((item) => item.title)
-                        .filter(Boolean);
+          ${
+            section.description
+              ? `
+                <p>
+                  ${escapeHtml(section.description)}
+                </p>
+              `
+              : ""
+          }
 
-                return `
-                    <footer className="footer">
+          ${renderItems(section.items)}
 
-                        <div className="footer-inner">
+        </section>
+      `;
+    })
+    .join("\n");
 
-                            <div className="footer-brand">
-
-                                <h3>
-                                    ${escapeHtml(
-                                        section.title ||
-                                            "Website"
-                                    )}
-                                </h3>
-
-                                ${
-                                    section.description
-                                        ? `
-                                            <p>
-                                                ${escapeHtml(
-                                                    section.description
-                                                )}
-                                            </p>
-                                        `
-                                        : ""
-                                }
-
-                            </div>
-
-                            ${
-                                footerLinks.length
-                                    ? `
-                                        <div className="footer-links">
-
-                                            ${footerLinks
-                                                .map(
-                                                    (link) => `
-                                                        <a href="#">
-                                                            ${escapeHtml(
-                                                                link
-                                                            )}
-                                                        </a>
-                                                    `
-                                                )
-                                                .join("")}
-
-                                        </div>
-                                    `
-                                    : ""
-                            }
-
-                        </div>
-
-                    </footer>
-                `;
-            }
-
-
-            return "";
-        })
-        .join("\n");
-
-
-    // ========================================================
-    // Final App.jsx
-    // ========================================================
-
-    return `
+  /*
+   * IMPORTANT:
+   * This template generates the final App.jsx.
+   *
+   * The \${...} below must remain escaped because
+   * isMobileMenuOpen is a variable inside the GENERATED
+   * React application, not inside this generator.
+   */
+  return `
 import React, { useState } from "react";
 import "./styles.css";
 
 function App() {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-    const closeMenu = () => setIsMobileMenuOpen(false);
+  const toggleMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
 
-    return (
-        <div id="top" className="app">
-            ${sectionCode}
-        </div>
-    );
+  const closeMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  return (
+    <div id="top" className="app">
+      ${sectionCode}
+    </div>
+  );
 }
 
 export default App;
@@ -867,6 +772,513 @@ createRoot(document.getElementById("root")).render(
         <App />
     </React.StrictMode>
 );
+`;
+
+    await writeGeneratedFile(
+        "src/main.jsx",
+        mainCode
+    );
+
+    return mainCode;
+}
+
+
+// ============================================================
+// 6. Generate styles.css
+// ============================================================
+
+export async function generateStylesFile(
+    reactSpec
+) {
+    const theme =
+        reactSpec.theme || {};
+
+    const fontFamily =
+        theme.fontFamily ||
+        "system-ui, sans-serif";
+
+    const primaryColor =
+        theme.primaryColor ||
+        "#635bff";
+
+    const secondaryColor =
+        theme.secondaryColor ||
+        "#f6f9fc";
+
+    const textColor =
+        theme.textColor ||
+        "#0a2540";
+
+    const backgroundColor =
+        theme.backgroundColor ||
+        "#ffffff";
+
+
+    const styles = `
+
+:root {
+    --primary-color: ${primaryColor};
+    --secondary-color: ${secondaryColor};
+    --text-color: ${textColor};
+    --background-color: ${backgroundColor};
+    --font-family: ${fontFamily};
+    --max-width: 1200px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-family);
+    color: var(--text-color);
+    background: var(--background-color);
+    overflow-x: hidden;
+}
+
+button, a {
+    font: inherit;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.app {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ==========================================================
+   NAVBAR
+   ========================================================== */
+
+.navbar {
+    width: 100%;
+    padding: 20px 5%;
+    position: relative;
+    z-index: 100;
+    background: var(--background-color);
+}
+
+.navbar-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.brand {
+    font-size: 24px;
+    font-weight: 700;
+    z-index: 101;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.nav-links a {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.nav-links a:hover {
+    opacity: 1;
+}
+
+.mobile-menu-button {
+    display: none;
+    border: none;
+    background: transparent;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 101;
+}
+
+/* ==========================================================
+   GENERIC SECTIONS & LAYOUTS
+   ========================================================== */
+
+.section, .hero, .cta, .footer {
+    width: 100%;
+    padding: 80px 5%;
+}
+
+.section-heading {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 50px;
+}
+
+.section-heading h2, .cta h2 {
+    margin: 0 0 20px;
+    font-size: clamp(32px, 5vw, 48px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.section-heading p, .cta p {
+    font-size: 18px;
+    line-height: 1.6;
+    opacity: 0.75;
+    margin: 0;
+}
+
+/* Layout overrides */
+.layout-full {
+    max-width: 100%;
+    padding: 80px 0;
+}
+.layout-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+.layout-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    max-width: var(--max-width);
+    margin: 0 auto;
+}
+.layout-wide {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+.layout-default {
+    max-width: var(--max-width);
+    margin: 0 auto;
+}
+
+/* Backgrounds */
+.has-bg {
+    background: var(--secondary-color);
+}
+
+/* ==========================================================
+   HERO
+   ========================================================== */
+
+.hero {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+}
+
+.hero-content {
+    flex: 1;
+}
+
+.hero h1 {
+    margin: 0 0 24px;
+    font-size: clamp(40px, 6vw, 72px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+}
+
+.hero-description {
+    font-size: 20px;
+    line-height: 1.5;
+    opacity: 0.8;
+    margin: 0 0 40px;
+    max-width: 600px;
+}
+
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.hero-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* ==========================================================
+   BUTTONS
+   ========================================================== */
+
+button, .primary-btn, .secondary-btn {
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.primary-btn {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.primary-btn:hover {
+    filter: brightness(1.1);
+}
+
+.secondary-btn {
+    background: transparent;
+    border: 1px solid currentColor;
+    color: inherit;
+}
+
+.secondary-btn:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+/* ==========================================================
+   GRIDS & COLUMNS
+   ========================================================== */
+
+.features-grid, .stats-grid, .customers-grid, .resources-grid {
+    display: grid;
+    gap: 32px;
+    width: 100%;
+}
+
+.cols-1 { grid-template-columns: 1fr; }
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.cols-auto { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+/* ==========================================================
+   CARDS
+   ========================================================== */
+
+.content-card {
+    background: var(--secondary-color);
+    border-radius: 16px;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-content {
+    padding: 32px;
+    flex: 1;
+}
+
+.card-content h3 {
+    margin: 0 0 12px;
+    font-size: 22px;
+}
+
+.card-content p {
+    margin: 0;
+    line-height: 1.6;
+    opacity: 0.75;
+}
+
+/* ==========================================================
+   IMAGES & ASPECT RATIOS
+   ========================================================== */
+
+.card-image {
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.aspect-auto img { height: auto; object-fit: contain; }
+.aspect-square { aspect-ratio: 1 / 1; }
+.aspect-video { aspect-ratio: 16 / 9; }
+.aspect-wide { aspect-ratio: 21 / 9; }
+
+.aspect-square img, .aspect-video img, .aspect-wide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* ==========================================================
+   STATS
+   ========================================================== */
+
+.stat-card {
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--primary-color);
+}
+
+/* ==========================================================
+   CTA
+   ========================================================== */
+
+.cta {
+    background: var(--primary-color);
+    color: #fff;
+    text-align: center;
+    border-radius: 24px;
+    margin: 60px auto;
+    max-width: var(--max-width);
+}
+
+.cta .cta-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.cta .secondary-btn {
+    border-color: rgba(255,255,255,0.5);
+    color: #fff;
+}
+
+.cta .secondary-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+/* ==========================================================
+   FOOTER
+   ========================================================== */
+
+.footer {
+    background: var(--secondary-color);
+    margin-top: auto;
+}
+
+.footer-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 40px;
+}
+
+.footer-brand {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.footer-links {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+
+.footer-links a {
+    opacity: 0.7;
+}
+
+.footer-links a:hover {
+    opacity: 1;
+}
+
+/* ==========================================================
+   RESPONSIVE DESIGN (TABLET)
+   ========================================================== */
+
+@media (max-width: 1024px) {
+    .layout-split {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    
+    .hero-split {
+        text-align: center;
+    }
+    
+    .hero-actions {
+        justify-content: center;
+    }
+
+    .cols-3, .cols-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ==========================================================
+   RESPONSIVE DESIGN (MOBILE)
+   ========================================================== */
+
+@media (max-width: 768px) {
+    .section, .hero, .cta, .footer {
+        padding: 50px 5%;
+    }
+
+    /* Mobile Nav */
+    .mobile-menu-button {
+        display: block;
+    }
+
+    .nav-links {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: var(--background-color);
+        flex-direction: column;
+        padding: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
+
+    .nav-links.open {
+        max-height: 500px;
+        padding: 20px 0;
+    }
+
+    .nav-links a {
+        padding: 12px 5%;
+        width: 100%;
+        text-align: center;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    /* Columns */
+    .cols-2, .cols-3, .cols-4 {
+        grid-template-columns: 1fr;
+    }
+
+    .cta {
+        border-radius: 0;
+        margin: 0;
+    }
+}
+
 `;
 
     await writeGeneratedFile(

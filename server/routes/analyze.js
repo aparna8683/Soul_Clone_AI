@@ -12,6 +12,7 @@ import {
     generatePackageFile
 } from "../generator/reactGenerator.js";
 import { validateAndRepairBuild } from "../generator/buildValidator.js";
+import { startPreviewServer } from "../preview/previewServer.js";
 
 const router = express.Router();
 
@@ -55,12 +56,19 @@ router.post("/", async (req, res) => {
         const generatedDir = path.resolve("generated-site");
         const buildResult = await validateAndRepairBuild(generatedDir, 2);
 
+        let previewUrl = null;
+        if (buildResult.success) {
+            previewUrl = await startPreviewServer(generatedDir);
+            console.log("👀 Preview available at:", previewUrl);
+        }
+
         res.json({
             websiteSpec,
             componentPlan,
             reactSpec,
             appCode,
-            buildResult
+            buildResult,
+            previewUrl
         });
 
     } catch (error) {

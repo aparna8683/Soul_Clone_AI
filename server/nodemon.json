@@ -1,0 +1,14 @@
+{
+  "watch": [
+    "server.js",
+    "routes",
+    "ai",
+    "browser",
+    "analyzer",
+    "generator"
+  ],
+  "ignore": [
+    "generated-site/**",
+    "screenshots/**"
+  ]
+}

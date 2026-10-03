@@ -39,7 +39,8 @@ export async function extractDOM(page) {
             );
         })
         .map((element) => ({
-            text: getText(element)
+            text: getText(element),
+            url: element.href || null
         }));
 
         const images = Array.from(
