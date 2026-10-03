@@ -8,3 +8,16 @@ export async function captureScreenshot(page) {
 
     return screenshotPath;
 }
+
+export async function captureVisualScreenshot(page) {
+    const screenshotPath = "screenshots/visual-desktop.jpg";
+
+    await page.screenshot({
+        path: screenshotPath,
+        type: "jpeg",
+        quality: 70,
+        fullPage: false
+    });
+
+    return screenshotPath;
+}

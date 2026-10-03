@@ -4,7 +4,8 @@ import { extractDOM } from "./domExtractor.js";
 import { extractStructure } from "./structureExtractor.js";
 import { extractStyles } from "./cssExtractor.js";
 import { extractAssets } from "./assetExtractor.js";
-import { captureScreenshot } from "./screenshot.js";
+import { captureScreenshot, captureVisualScreenshot } from "./screenshot.js";
+import { analyzeScreenshot } from "../ai/visionAgent.js";
 import { analyzeResponsive } from "./responsiveAnalyzer.js";
 
 import { buildWebsiteSpec } from "../analyzer/specBuilder.js";
@@ -61,6 +62,21 @@ export async function analyzeWebsite(url) {
         console.log("📸 Capturing screenshot...");
         const screenshot = await captureScreenshot(page);
 
+        console.log("🖼️ Capturing visual-analysis screenshot...");
+        const visualScreenshot = await captureVisualScreenshot(page);
+
+        console.log("👁️ Running visual analysis...");
+        let visualAnalysis = null;
+
+        try {
+            visualAnalysis = await analyzeScreenshot(visualScreenshot);
+        } catch (visualError) {
+            console.warn(
+                "⚠️ Visual analysis unavailable; continuing with DOM/CSS analysis:",
+                visualError.message
+            );
+        }
+
         console.log("📱 Analyzing responsive behavior...");
         const responsive = await analyzeResponsive(page);
 
@@ -72,7 +88,9 @@ export async function analyzeWebsite(url) {
             styles,
             assets,
             screenshot,
-            responsive
+            visualScreenshot,
+            responsive,
+            visualAnalysis
         });
 
         console.log("✅ WebsiteSpec created");

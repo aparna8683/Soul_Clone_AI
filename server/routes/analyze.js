@@ -13,6 +13,9 @@ import {
 } from "../generator/reactGenerator.js";
 import { validateAndRepairBuild } from "../generator/buildValidator.js";
 import { startPreviewServer } from "../preview/previewServer.js";
+import { captureGeneratedScreenshot } from "../preview/previewScreenshot.js";
+import { critiqueGeneratedWebsite } from "../ai/visualCritic.js";
+import { downloadAssets } from "../browser/assetDownloader.js";
 
 const router = express.Router();
 
@@ -37,6 +40,11 @@ router.post("/", async (req, res) => {
         const reactSpec = await generateReactSpec(websiteSpec, componentPlan);
         console.log("🎨 React specification created");
 
+        const generatedDir = path.resolve("generated-site");
+
+        console.log("🖼️ Preparing local assets...");
+        await downloadAssets(websiteSpec, generatedDir);
+
         const appCode = await generateAppFile(reactSpec, websiteSpec);
         console.log("⚛️ App.jsx generated");
 
@@ -53,13 +61,29 @@ router.post("/", async (req, res) => {
         console.log("📦 package.json generated");
         
         console.log("\n🧪 Running build validation...");
-        const generatedDir = path.resolve("generated-site");
         const buildResult = await validateAndRepairBuild(generatedDir, 2);
 
         let previewUrl = null;
+        let generatedScreenshot = null;
+        let visualCritique = null;
+
         if (buildResult.success) {
             previewUrl = await startPreviewServer(generatedDir);
             console.log("👀 Preview available at:", previewUrl);
+
+            try {
+                generatedScreenshot = await captureGeneratedScreenshot(previewUrl);
+                console.log("📸 Generated screenshot captured");
+
+                visualCritique = await critiqueGeneratedWebsite(
+                    websiteSpec.visualScreenshot || websiteSpec.screenshot,
+                    generatedScreenshot
+                );
+
+                console.log("🔎 Visual QA completed");
+            } catch (visualError) {
+                console.warn("⚠️ Visual QA skipped:", visualError.message);
+            }
         }
 
         res.json({
@@ -68,7 +92,9 @@ router.post("/", async (req, res) => {
             reactSpec,
             appCode,
             buildResult,
-            previewUrl
+            previewUrl,
+            generatedScreenshot,
+            visualCritique
         });
 
     } catch (error) {
