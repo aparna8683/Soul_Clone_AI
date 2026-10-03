@@ -106,6 +106,10 @@ export async function generateReactSpec(
                 alt: image.alt,
                 width: image.width,
                 height: image.height,
+                aspectRatio: image.aspectRatio,
+                semanticRole: image.semanticRole,
+                alt: image.alt,
+                parentText: image.parentText,
                 local: Boolean(image.local)
             }))
     };
@@ -308,12 +312,68 @@ function enrichReactSpec(reactSpec, websiteSpec) {
     });
   };
 
+  const imageById = new Map(
+    sourceImages.map((image, index) => [`assets/img-${index}`, image])
+  );
+
+  const isBadFeatureImage = (image) => {
+    if (!image) return true;
+    if (image.semanticRole === "avatar") return true;
+    if (image.semanticRole === "logo") return true;
+    if (image.width && image.height) {
+      const ratio = image.width / Math.max(image.height, 1);
+      if (ratio < 0.72 && image.height > image.width * 1.25) return true;
+    }
+    return false;
+  };
+
+  const findBestSectionImage = (source) => {
+    const media = source?.media || [];
+    if (!media.length) return null;
+
+    return [...media]
+      .sort((a, b) => {
+        const roleScore = (item) =>
+          item.role === "large-visual" ? 3 :
+          item.role === "content-image" ? 2 : 1;
+        return roleScore(b) - roleScore(a) || (b.width * b.height) - (a.width * a.height);
+      })
+      .find((item) => !isBadFeatureImage(imageById.get(`assets/img-${item.assetIndex}`))) || null;
+  };
+
   for (const section of result.sections) {
     const source = findSourceSection(section);
     const media = source?.media || [];
 
+    if (Array.isArray(section.items)) {
+      section.items = section.items.map((item) => ({ ...item }));
+
+      section.items.forEach((item) => {
+        if (item.image && isBadFeatureImage(imageById.get(item.image))) {
+          item.image = "";
+        }
+      });
+
+      if (["features", "customers", "resources"].includes(section.type)) {
+        const validSectionMedia = media
+          .map((item) => imageById.get(`assets/img-${item.assetIndex}`))
+          .filter((image) => image && !isBadFeatureImage(image));
+
+        if (validSectionMedia.length) {
+          section.items = section.items.map((item, index) => {
+            if (item.image) return item;
+            const candidate = validSectionMedia[index % validSectionMedia.length];
+            const candidateIndex = sourceImages.indexOf(candidate);
+            return candidateIndex >= 0
+              ? { ...item, image: `assets/img-${candidateIndex}` }
+              : item;
+          });
+        }
+      }
+    }
+
     if (!section.image && media.length) {
-      const preferred = media.find((item) => item.role === "large-visual") || media[0];
+      const preferred = findBestSectionImage(source) || media[0];
       section.image = `assets/img-${preferred.assetIndex}`;
       section.imageAspectRatio =
         preferred.width / Math.max(preferred.height, 1) > 1.7
