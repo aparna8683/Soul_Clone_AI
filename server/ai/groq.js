@@ -13,7 +13,7 @@ const client = new Groq({
 
 const MODEL_NAME = "openai/gpt-oss-120b";
 
-export async function runAI(prompt) {
+export async function runAI(prompt, options = {}) {
     try {
         console.log("🚀 Sending request to Groq...");
 
@@ -26,7 +26,13 @@ export async function runAI(prompt) {
                         content: prompt,
                     },
                 ],
-                temperature: 0.7,
+                temperature: options.temperature ?? 0.7,
+                ...(options.max_completion_tokens
+                    ? { max_completion_tokens: options.max_completion_tokens }
+                    : {}),
+                ...(options.response_format
+                    ? { response_format: options.response_format }
+                    : {})
             },
             {
                 timeout: 30000,

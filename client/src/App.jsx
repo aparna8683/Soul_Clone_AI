@@ -13,6 +13,8 @@ function App() {
     const [modifyStatus, setModifyStatus] = useState("");
     const [previewUrl, setPreviewUrl] = useState("");
     const [visualCritique, setVisualCritique] = useState(null);
+    const [visualDiff, setVisualDiff] = useState(null);
+    const [visualRepairIterations, setVisualRepairIterations] = useState(0);
 
     const handleGenerate = async () => {
         if (!url) return;
@@ -23,6 +25,8 @@ function App() {
         setWebsiteSpec(null);
         setPreviewUrl("");
         setVisualCritique(null);
+        setVisualDiff(null);
+        setVisualRepairIterations(0);
         setStatus("Analyzing website...");
 
         try {
@@ -43,6 +47,8 @@ function App() {
             setWebsiteSpec(data.websiteSpec);
             setPreviewUrl(data.previewUrl || "");
             setVisualCritique(data.visualCritique || null);
+            setVisualDiff(data.visualDiff || null);
+            setVisualRepairIterations(data.visualRepairIterations || 0);
 
             setStatus(
                 data.buildResult?.success
@@ -148,6 +154,20 @@ function App() {
                                 )}
                             </div>
                         </section>
+
+                        {visualDiff?.comparable && (
+                            <section className="success-section">
+                                <div className="success-card">
+                                    <h3>📐 Visual Similarity</h3>
+                                    <p>
+                                        Pixel similarity: <strong>{(visualDiff.similarity * 100).toFixed(1)}%</strong>
+                                        {visualRepairIterations > 0
+                                            ? ` · ${visualRepairIterations} visual repair iteration(s) accepted`
+                                            : ""}
+                                    </p>
+                                </div>
+                            </section>
+                        )}
 
                         {visualCritique && (
                             <section className="success-section">

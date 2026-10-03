@@ -10,13 +10,13 @@ export async function captureScreenshot(page) {
 }
 
 export async function captureVisualScreenshot(page) {
-    const screenshotPath = "screenshots/visual-desktop.jpg";
+    const screenshotPath = "screenshots/visual-desktop.png";
 
     await page.screenshot({
         path: screenshotPath,
-        type: "jpeg",
-        quality: 70,
-        fullPage: false
+        type: "png",
+        fullPage: false,
+        scale: "css"
     });
 
     return screenshotPath;
