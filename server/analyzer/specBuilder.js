@@ -25,7 +25,8 @@ export function buildWebsiteSpec({
         },
 
         structure: {
-            sections: structure.sections
+            sections: structure.sections,
+            landmarks: structure.landmarks || []
         },
 
         design: {
