@@ -102,7 +102,7 @@ Use exactly this structure:
 
     "sections": [
         {
-            "type": "navbar | hero | features | stats | customers | resources | cta | footer",
+            "type": "navbar | hero | search | features | stats | customers | resources | cta | footer",
             "title": "string",
             "description": "string",
             "buttons": [{"text": "string", "url": "string"}],
@@ -440,6 +440,31 @@ function createAppComponent(reactSpec, websiteSpec) {
                 : ""
             }
 
+          </section>
+        `;
+      }
+
+      /*
+       * SEARCH / FILTER BAR
+       */
+      if (type === "search") {
+        const fields = section.items || [
+          { title: "Where", description: "Search destinations" },
+          { title: "When", description: "Add dates" },
+          { title: "Who", description: "Add guests" }
+        ];
+
+        return `
+          <section id="${sectionId}" className="search-section">
+            <div className="search-bar">
+              ${fields.map((field) => `
+                <button className="search-field" type="button">
+                  <strong>${escapeHtml(field.title || "")}</strong>
+                  <span>${escapeHtml(field.description || "")}</span>
+                </button>
+              `).join("")}
+              <button className="search-submit" type="button" aria-label="Search">⌕</button>
+            </div>
           </section>
         `;
       }
@@ -898,6 +923,50 @@ img { max-width: 100%; display: block; }
 .layout-default { max-width: var(--max-width); margin: 0 auto; }
 .has-bg { background: var(--secondary-color); }
 
+/* Search */
+.search-section {
+  width: 100%;
+  padding: 10px 5% 34px;
+  display: flex;
+  justify-content: center;
+}
+.search-bar {
+  width: min(820px, 100%);
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr auto;
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 999px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.12);
+  overflow: hidden;
+}
+.search-field {
+  min-height: 66px;
+  padding: 12px 24px;
+  text-align: left;
+  border: 0;
+  border-right: 1px solid rgba(0,0,0,.12);
+  background: transparent;
+  cursor: pointer;
+}
+.search-field strong, .search-field span {
+  display: block;
+}
+.search-field strong { font-size: 13px; }
+.search-field span { margin-top: 4px; color: #666; font-size: 14px; }
+.search-submit {
+  width: 52px;
+  height: 52px;
+  margin: 7px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 25px;
+  cursor: pointer;
+}
+
 /* Hero */
 .hero {
   min-height: 60vh;
@@ -1072,6 +1141,19 @@ img { max-width: 100%; display: block; }
     padding: 12px 5%;
     text-align: center;
     border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+  .search-bar {
+    grid-template-columns: 1fr;
+    border-radius: 22px;
+  }
+  .search-field {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+  }
+  .search-submit {
+    width: calc(100% - 14px);
+    border-radius: 14px;
   }
   .hero { min-height: auto; }
   .hero h1 { font-size: clamp(38px, 12vw, 58px); }
