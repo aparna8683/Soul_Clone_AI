@@ -83,7 +83,7 @@ Rules:
 9. Return JSON only.
 `;
 
-    console.log("👁️ Sending screenshot to vision model...");
+    console.log("👁️ Sending screenshot to vision model (max 700 output tokens)...");
 
     const response = await client.chat.completions.create({
         model: VISION_MODEL,
@@ -105,7 +105,7 @@ Rules:
             }
         ],
         temperature: 0.2,
-        max_completion_tokens: 2500,
+        max_completion_tokens: 700,
         response_format: {
             type: "json_object"
         }
