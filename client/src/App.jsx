@@ -16,10 +16,12 @@ function App() {
 
     const handleGenerate = async () => {
         if (!url) return;
+
         setLoading(true);
         setGeneratedSuccess(false);
         setReactSpec(null);
         setWebsiteSpec(null);
+        setPreviewUrl("");
         setVisualCritique(null);
         setStatus("Analyzing website...");
 
@@ -30,25 +32,24 @@ function App() {
                 body: JSON.stringify({ url })
             });
 
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || "Failed to analyze website");
-            }
-            
-            setStatus("Generating components and building frontend...");
             const data = await response.json();
-            
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to analyze website");
+            }
+
+            setStatus("Generating components and building frontend...");
             setReactSpec(data.reactSpec);
             setWebsiteSpec(data.websiteSpec);
             setPreviewUrl(data.previewUrl || "");
             setVisualCritique(data.visualCritique || null);
-            
-            if (data.buildResult && data.buildResult.success) {
-                setStatus("Build validated successfully!");
-            } else {
-                setStatus("Generation complete (build had issues).");
-            }
-            
+
+            setStatus(
+                data.buildResult?.success
+                    ? "Build validated successfully!"
+                    : "Generation complete (build had issues)."
+            );
+
             setGeneratedSuccess(true);
         } catch (error) {
             console.error(error);
@@ -60,28 +61,32 @@ function App() {
 
     const handleModify = async () => {
         if (!modifyInstruction || !reactSpec) return;
+
         setModifyLoading(true);
         setModifyStatus("Modifying with AI...");
 
         try {
+            // Only the ReactSpec is sent. The original WebsiteSpec can contain
+            // large screenshot/base64 fields and is already stored by the server.
             const response = await fetch("http://localhost:5000/api/modify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     instruction: modifyInstruction,
-                    reactSpec,
-                    websiteSpec
+                    reactSpec
                 })
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || "Failed to modify website");
+                throw new Error(data.error || "Failed to modify website");
             }
 
-            const data = await response.json();
             setReactSpec(data.reactSpec);
             setPreviewUrl(data.previewUrl || previewUrl);
+            setVisualCritique(data.visualCritique || null);
+            setModifyInstruction("");
             setModifyStatus("Modification complete!");
         } catch (error) {
             console.error(error);
@@ -107,10 +112,10 @@ function App() {
                 </section>
 
                 <section className="input-section">
-                    <input 
-                        type="url" 
-                        className="url-input" 
-                        placeholder="https://example.com" 
+                    <input
+                        type="url"
+                        className="url-input"
+                        placeholder="https://example.com"
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                         disabled={loading}
@@ -134,7 +139,7 @@ function App() {
                         <section className="success-section">
                             <div className="success-card">
                                 <h3>✅ Website Generated Successfully</h3>
-                                <p>Your new React/Vite project is ready. You can inspect the files and build output locally in:</p>
+                                <p>Your new React/Vite project is ready.</p>
                                 <code>server/generated-site/</code>
                                 {previewUrl && (
                                     <a className="preview-link" href={previewUrl} target="_blank" rel="noreferrer">
@@ -166,21 +171,23 @@ function App() {
                         <section className="modify-section">
                             <h3>Modify Generated Website</h3>
                             <div className="modify-input-group">
-                                <input 
-                                    type="text" 
-                                    className="modify-input" 
-                                    placeholder="e.g. Make the primary color purple" 
+                                <input
+                                    type="text"
+                                    className="modify-input"
+                                    placeholder="e.g. Make the primary color purple"
                                     value={modifyInstruction}
                                     onChange={(e) => setModifyInstruction(e.target.value)}
                                     disabled={modifyLoading}
                                 />
-                                <button className="secondary-btn" onClick={handleModify} disabled={modifyLoading || !modifyInstruction}>
+                                <button
+                                    className="secondary-btn"
+                                    onClick={handleModify}
+                                    disabled={modifyLoading || !modifyInstruction}
+                                >
                                     {modifyLoading ? "Modifying..." : "Modify with AI"}
                                 </button>
                             </div>
-                            {modifyStatus && (
-                                <p className="modify-status">{modifyStatus}</p>
-                            )}
+                            {modifyStatus && <p className="modify-status">{modifyStatus}</p>}
                         </section>
                     </>
                 )}
