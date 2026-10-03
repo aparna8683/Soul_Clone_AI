@@ -11,6 +11,7 @@ function App() {
     const [modifyInstruction, setModifyInstruction] = useState("");
     const [modifyLoading, setModifyLoading] = useState(false);
     const [modifyStatus, setModifyStatus] = useState("");
+    const [previewUrl, setPreviewUrl] = useState("");
 
     const handleGenerate = async () => {
         if (!url) return;
@@ -37,6 +38,7 @@ function App() {
             
             setReactSpec(data.reactSpec);
             setWebsiteSpec(data.websiteSpec);
+            setPreviewUrl(data.previewUrl || "");
             
             if (data.buildResult && data.buildResult.success) {
                 setStatus("Build validated successfully!");
@@ -76,6 +78,7 @@ function App() {
 
             const data = await response.json();
             setReactSpec(data.reactSpec);
+            setPreviewUrl(data.previewUrl || previewUrl);
             setModifyStatus("Modification complete!");
         } catch (error) {
             console.error(error);
@@ -130,6 +133,11 @@ function App() {
                                 <h3>✅ Website Generated Successfully</h3>
                                 <p>Your new React/Vite project is ready. You can inspect the files and build output locally in:</p>
                                 <code>server/generated-site/</code>
+                                {previewUrl && (
+                                    <a className="preview-link" href={previewUrl} target="_blank" rel="noreferrer">
+                                        Open local preview ↗
+                                    </a>
+                                )}
                             </div>
                         </section>
 
