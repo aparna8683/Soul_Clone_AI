@@ -787,1298 +787,296 @@ createRoot(document.getElementById("root")).render(
 // 6. Generate styles.css
 // ============================================================
 
-export async function generateStylesFile(
-    reactSpec
-) {
-    const theme =
-        reactSpec.theme || {};
-
-    const fontFamily =
-        theme.fontFamily ||
-        "system-ui, sans-serif";
-
-    const primaryColor =
-        theme.primaryColor ||
-        "#635bff";
-
-    const secondaryColor =
-        theme.secondaryColor ||
-        "#f6f9fc";
-
-    const textColor =
-        theme.textColor ||
-        "#0a2540";
-
-    const backgroundColor =
-        theme.backgroundColor ||
-        "#ffffff";
-
+export async function generateStylesFile(reactSpec) {
+    const theme = reactSpec?.theme || {};
+    const fontFamily = theme.fontFamily || "system-ui, sans-serif";
+    const primaryColor = theme.primaryColor || "#635bff";
+    const secondaryColor = theme.secondaryColor || "#f6f9fc";
+    const textColor = theme.textColor || "#0a2540";
+    const backgroundColor = theme.backgroundColor || "#ffffff";
 
     const styles = `
-
 :root {
-    --primary-color: ${primaryColor};
-    --secondary-color: ${secondaryColor};
-    --text-color: ${textColor};
-    --background-color: ${backgroundColor};
-    --font-family: ${fontFamily};
-    --max-width: 1200px;
+  --primary-color: ${primaryColor};
+  --secondary-color: ${secondaryColor};
+  --text-color: ${textColor};
+  --background-color: ${backgroundColor};
+  --font-family: ${fontFamily};
+  --max-width: 1280px;
 }
 
-* {
-    box-sizing: border-box;
-}
-
-html {
-    scroll-behavior: smooth;
-}
-
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 body {
-    margin: 0;
-    font-family: var(--font-family);
-    color: var(--text-color);
-    background: var(--background-color);
-    overflow-x: hidden;
+  margin: 0;
+  font-family: var(--font-family);
+  color: var(--text-color);
+  background: var(--background-color);
 }
+button, a { font: inherit; }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+.app { width: 100%; min-height: 100vh; overflow-x: hidden; }
 
-button, a {
-    font: inherit;
-}
-
-a {
-    text-decoration: none;
-    color: inherit;
-}
-
-img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-}
-
-.app {
-    width: 100%;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-/* ==========================================================
-   NAVBAR
-   ========================================================== */
-
+/* Navbar */
 .navbar {
-    width: 100%;
-    padding: 20px 5%;
-    position: relative;
-    z-index: 100;
-    background: var(--background-color);
+  width: 100%;
+  padding: 18px 5%;
+  position: relative;
+  z-index: 20;
+  background: var(--background-color);
 }
-
 .navbar-inner {
-    max-width: var(--max-width);
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 30px;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
 }
-
-.brand {
-    font-size: 24px;
-    font-weight: 700;
-    z-index: 101;
-}
-
+.brand { font-size: 22px; font-weight: 700; }
 .nav-links {
-    display: flex;
-    align-items: center;
-    gap: 32px;
-    font-size: 15px;
-    font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  font-size: 14px;
 }
-
-.nav-links a {
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
-}
-
-.nav-links a:hover {
-    opacity: 1;
-}
-
+.nav-links a { opacity: .8; transition: opacity .2s ease; }
+.nav-links a:hover { opacity: 1; }
 .mobile-menu-button {
-    display: none;
-    border: none;
-    background: transparent;
-    font-size: 28px;
-    cursor: pointer;
-    z-index: 101;
+  display: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 8px;
 }
 
-/* ==========================================================
-   GENERIC SECTIONS & LAYOUTS
-   ========================================================== */
-
+/* Shared sections */
 .section, .hero, .cta, .footer {
-    width: 100%;
-    padding: 80px 5%;
+  width: 100%;
+  padding: 80px 5%;
 }
-
 .section-heading {
-    text-align: center;
-    max-width: 800px;
-    margin: 0 auto 50px;
+  max-width: 800px;
+  margin: 0 auto 50px;
+  text-align: center;
 }
-
 .section-heading h2, .cta h2 {
-    margin: 0 0 20px;
-    font-size: clamp(32px, 5vw, 48px);
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+  margin: 0 0 20px;
+  font-size: clamp(32px, 5vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -.02em;
 }
-
 .section-heading p, .cta p {
-    font-size: 18px;
-    line-height: 1.6;
-    opacity: 0.75;
-    margin: 0;
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.6;
+  opacity: .75;
 }
-
-/* Layout overrides */
-.layout-full {
-    max-width: 100%;
-    padding: 80px 0;
-}
-.layout-center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
+.layout-full { max-width: 100%; }
+.layout-center { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .layout-split {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-    align-items: center;
-    max-width: var(--max-width);
-    margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap: 60px;
+  align-items: center;
+  max-width: var(--max-width);
+  margin: 0 auto;
 }
-.layout-wide {
-    max-width: 1600px;
-    margin: 0 auto;
-}
-.layout-default {
-    max-width: var(--max-width);
-    margin: 0 auto;
-}
+.layout-wide { max-width: 1600px; margin: 0 auto; }
+.layout-default { max-width: var(--max-width); margin: 0 auto; }
+.has-bg { background: var(--secondary-color); }
 
-/* Backgrounds */
-.has-bg {
-    background: var(--secondary-color);
-}
-
-/* ==========================================================
-   HERO
-   ========================================================== */
-
+/* Hero */
 .hero {
-    min-height: 60vh;
-    display: flex;
-    align-items: center;
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
-.hero-content {
-    flex: 1;
-}
-
+.hero-content { width: 100%; max-width: 760px; }
 .hero h1 {
-    margin: 0 0 24px;
-    font-size: clamp(40px, 6vw, 72px);
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    font-weight: 600;
+  margin: 0 0 24px;
+  font-size: clamp(40px, 6vw, 72px);
+  line-height: 1.05;
+  letter-spacing: -.03em;
+  font-weight: 600;
 }
-
 .hero-description {
-    font-size: 20px;
-    line-height: 1.5;
-    opacity: 0.8;
-    margin: 0 0 40px;
-    max-width: 600px;
+  margin: 0 0 32px;
+  max-width: 680px;
+  font-size: 20px;
+  line-height: 1.55;
+  opacity: .8;
 }
-
 .hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
 }
-
 .hero-image {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
+  width: min(100%, 620px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-image img {
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
 }
 
-/* ==========================================================
-   BUTTONS
-   ========================================================== */
-
-button, .primary-btn, .secondary-btn {
-    padding: 14px 28px;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
+/* Buttons */
+.primary-btn, .secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 12px 22px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform .15s ease, filter .15s ease, background .15s ease;
 }
-
 .primary-btn {
-    background: var(--primary-color);
-    color: #fff;
+  background: var(--primary-color);
+  color: #fff;
 }
-
-.primary-btn:hover {
-    filter: brightness(1.1);
-}
-
+.primary-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .secondary-btn {
-    background: transparent;
-    border: 1px solid currentColor;
-    color: inherit;
+  background: transparent;
+  color: var(--text-color);
+  border-color: currentColor;
 }
+.secondary-btn:hover { background: rgba(0,0,0,.05); }
 
-.secondary-btn:hover {
-    background: rgba(0,0,0,0.05);
-}
-
-/* ==========================================================
-   GRIDS & COLUMNS
-   ========================================================== */
-
+/* Content grids */
 .features-grid, .stats-grid, .customers-grid, .resources-grid {
-    display: grid;
-    gap: 32px;
-    width: 100%;
+  display: grid;
+  gap: 28px;
+  width: 100%;
 }
-
+.features-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+.stats-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+.customers-grid, .resources-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
 .cols-1 { grid-template-columns: 1fr; }
-.cols-2 { grid-template-columns: repeat(2, 1fr); }
-.cols-3 { grid-template-columns: repeat(3, 1fr); }
-.cols-4 { grid-template-columns: repeat(4, 1fr); }
-.cols-auto { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.cols-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.cols-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+.cols-4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
 
-/* ==========================================================
-   CARDS
-   ========================================================== */
-
+/* Cards */
 .content-card {
-    background: var(--secondary-color);
-    border-radius: 16px;
-    overflow: hidden;
-    height: 100%;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--secondary-color);
+  border-radius: 16px;
+}
+.card-image {
+  width: 100%;
+  overflow: hidden;
+  background: rgba(0,0,0,.04);
+}
+.card-image img { width: 100%; height: auto; object-fit: cover; }
+.card-image.aspect-square { aspect-ratio: 1 / 1; }
+.card-image.aspect-video { aspect-ratio: 16 / 9; }
+.card-image.aspect-wide { aspect-ratio: 21 / 9; }
+.card-image.aspect-square img,
+.card-image.aspect-video img,
+.card-image.aspect-wide img { width: 100%; height: 100%; object-fit: cover; }
+.card-content { padding: 26px; flex: 1; }
+.card-content h3 { margin: 0 0 10px; font-size: 20px; line-height: 1.25; }
+.card-content p { margin: 0; line-height: 1.55; opacity: .75; }
+
+/* Stats */
+.stat-card { padding: 24px; text-align: center; }
+.stat-value { font-size: clamp(28px, 3vw, 44px); font-weight: 700; line-height: 1.15; color: var(--primary-color); }
+
+/* CTA */
+.cta {
+  max-width: var(--max-width);
+  margin: 60px auto;
+  border-radius: 24px;
+  background: var(--primary-color);
+  color: #fff;
+  text-align: center;
+}
+.cta .cta-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 30px;
+}
+.cta .secondary-btn { color: #fff; border-color: rgba(255,255,255,.55); }
+.cta .secondary-btn:hover { background: rgba(255,255,255,.1); }
+
+/* Footer */
+.footer { background: var(--secondary-color); margin-top: auto; }
+.footer-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 40px;
+}
+.footer-brand { font-size: 22px; font-weight: 700; }
+.footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+.footer-links a { opacity: .75; }
+.footer-links a:hover { opacity: 1; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .features-grid, .stats-grid, .customers-grid, .resources-grid {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+  .layout-split { grid-template-columns: 1fr; gap: 40px; }
+}
+@media (max-width: 768px) {
+  .section, .hero, .cta, .footer { padding: 56px 5%; }
+  .mobile-menu-button { display: block; }
+  .nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
     display: flex;
     flex-direction: column;
-}
-
-.card-content {
-    padding: 32px;
-    flex: 1;
-}
-
-.card-content h3 {
-    margin: 0 0 12px;
-    font-size: 22px;
-}
-
-.card-content p {
-    margin: 0;
-    line-height: 1.6;
-    opacity: 0.75;
-}
-
-/* ==========================================================
-   IMAGES & ASPECT RATIOS
-   ========================================================== */
-
-.card-image {
-    width: 100%;
-    position: relative;
+    align-items: stretch;
+    gap: 0;
+    max-height: 0;
     overflow: hidden;
-}
-
-.aspect-auto img { height: auto; object-fit: contain; }
-.aspect-square { aspect-ratio: 1 / 1; }
-.aspect-video { aspect-ratio: 16 / 9; }
-.aspect-wide { aspect-ratio: 21 / 9; }
-
-.aspect-square img, .aspect-video img, .aspect-wide img {
+    padding: 0;
+    background: var(--background-color);
+    box-shadow: 0 12px 24px rgba(0,0,0,.08);
+    transition: max-height .25s ease, padding .25s ease;
+  }
+  .nav-links.open { max-height: 520px; padding: 12px 0; }
+  .nav-links a {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-/* ==========================================================
-   STATS
-   ========================================================== */
-
-.stat-card {
-    padding: 20px;
+    padding: 12px 5%;
     text-align: center;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+  .hero { min-height: auto; }
+  .hero h1 { font-size: clamp(38px, 12vw, 58px); }
+  .hero-description { font-size: 17px; }
+  .hero-actions { justify-content: center; }
+  .features-grid, .stats-grid, .customers-grid, .resources-grid {
+    grid-template-columns: 1fr;
+  }
+  .cta { margin: 24px 5%; }
+  .footer-links { flex-direction: column; gap: 12px; }
 }
-
-.stat-value {
-    font-size: 48px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: var(--primary-color);
-}
-
-/* ==========================================================
-   CTA
-   ========================================================== */
-
-.cta {
-    background: var(--primary-color);
-    color: #fff;
-    text-align: center;
-    border-radius: 24px;
-    margin: 60px auto;
-    max-width: var(--max-width);
-}
-
-.cta .cta-actions {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-top: 32px;
-}
-
-.cta .secondary-btn {
-    border-color: rgba(255,255,255,0.5);
-    color: #fff;
-}
-
-.cta .secondary-btn:hover {
-    background: rgba(255,255,255,0.1);
-}
-
-/* ==========================================================
-   FOOTER
-   ========================================================== */
-
-.footer {
-    background: var(--secondary-color);
-    margin-top: auto;
-}
-
-.footer-inner {
-    max-width: var(--max-width);
-    margin: 0 auto;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 40px;
-}
-
-.footer-brand {
-    font-size: 24px;
-    font-weight: 700;
-}
-
-.footer-links {
-    display: flex;
-    gap: 32px;
-    flex-wrap: wrap;
-}
-
-.footer-links a {
-    opacity: 0.7;
-}
-
-.footer-links a:hover {
-    opacity: 1;
-}
-
-/* ==========================================================
-   RESPONSIVE DESIGN (TABLET)
-   ========================================================== */
-
-@media (max-width: 1024px) {
-    .layout-split {
-        grid-template-columns: 1fr;
-        gap: 40px;
-    }
-    
-    .hero-split {
-        text-align: center;
-    }
-    
-    .hero-actions {
-        justify-content: center;
-    }
-
-    .cols-3, .cols-4 {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-/* ==========================================================
-   RESPONSIVE DESIGN (MOBILE)
-   ========================================================== */
-
-@media (max-width: 768px) {
-    .section, .hero, .cta, .footer {
-        padding: 50px 5%;
-    }
-
-    /* Mobile Nav */
-    .mobile-menu-button {
-        display: block;
-    }
-
-    .nav-links {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 100%;
-        background: var(--background-color);
-        flex-direction: column;
-        padding: 0;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-    }
-
-    .nav-links.open {
-        max-height: 500px;
-        padding: 20px 0;
-    }
-
-    .nav-links a {
-        padding: 12px 5%;
-        width: 100%;
-        text-align: center;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-
-    /* Columns */
-    .cols-2, .cols-3, .cols-4 {
-        grid-template-columns: 1fr;
-    }
-
-    .cta {
-        border-radius: 0;
-        margin: 0;
-    }
-}
-
 `;
 
-    await writeGeneratedFile(
-        "src/main.jsx",
-        mainCode
-    );
-
-    return mainCode;
-}
-
-
-// ============================================================
-// 6. Generate styles.css
-// ============================================================
-
-export async function generateStylesFile(
-    reactSpec
-) {
-    const theme =
-        reactSpec.theme || {};
-
-    const fontFamily =
-        theme.fontFamily ||
-        "system-ui, sans-serif";
-
-    const primaryColor =
-        theme.primaryColor ||
-        "#635bff";
-
-    const secondaryColor =
-        theme.secondaryColor ||
-        "#f6f9fc";
-
-    const textColor =
-        theme.textColor ||
-        "#0a2540";
-
-    const backgroundColor =
-        theme.backgroundColor ||
-        "#ffffff";
-
-
-    const styles = `
-
-:root {
-    --primary-color: ${primaryColor};
-    --secondary-color: ${secondaryColor};
-    --text-color: ${textColor};
-    --background-color: ${backgroundColor};
-    --font-family: ${fontFamily};
-}
-
-* {
-    box-sizing: border-box;
-}
-
-html {
-    scroll-behavior: smooth;
-}
-
-body {
-    margin: 0;
-
-    font-family:
-        var(--font-family);
-
-    color:
-        var(--text-color);
-
-    background:
-        var(--background-color);
-}
-
-button,
-a {
-    font: inherit;
-}
-
-a {
-    text-decoration: none;
-    color: inherit;
-}
-
-img {
-    max-width: 100%;
-    display: block;
-}
-
-.app {
-    width: 100%;
-    min-height: 100vh;
-    overflow-x: hidden;
-}
-
-
-/* ==========================================================
-   NAVBAR
-   ========================================================== */
-
-.navbar {
-    width: 100%;
-
-    padding:
-        18px 5%;
-
-    position: relative;
-
-    z-index: 20;
-}
-
-.navbar-inner {
-    max-width: 1280px;
-
-    margin: 0 auto;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 30px;
-}
-
-.logo {
-    font-size: 22px;
-    font-weight: 700;
-}
-
-.nav-links {
-    display: flex;
-
-    align-items: center;
-
-    gap: 28px;
-
-    font-size: 14px;
-}
-
-.nav-links a {
-    opacity: 0.8;
-
-    transition:
-        opacity 0.2s ease;
-}
-
-.nav-links a:hover {
-    opacity: 1;
-}
-
-.mobile-menu {
-    display: none;
-
-    border: none;
-
-    background: transparent;
-
-    font-size: 24px;
-
-    cursor: pointer;
-}
-
-
-/* ==========================================================
-   HERO
-   ========================================================== */
-
-.hero {
-    max-width: 1280px;
-
-    min-height: 560px;
-
-    margin: 0 auto;
-
-    padding:
-        90px 5%;
-
-    display: flex;
-
-    align-items: center;
-}
-
-.hero-content {
-    width: 100%;
-
-    max-width: 760px;
-}
-
-.hero-split {
-    max-width: 1400px;
-
-    gap: 70px;
-}
-
-.hero-split .hero-content {
-    flex: 1;
-}
-
-.hero h1 {
-    margin:
-        0 0 28px;
-
-    font-size:
-        clamp(44px, 6vw, 76px);
-
-    line-height: 1.02;
-
-    letter-spacing:
-        -0.04em;
-
-    font-weight: 500;
-}
-
-.hero p {
-    max-width: 680px;
-
-    margin: 0;
-
-    font-size: 20px;
-
-    line-height: 1.55;
-
-    opacity: 0.72;
-}
-
-.hero-visual {
-    flex: 1;
-
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-}
-
-.hero-visual img {
-    width: 100%;
-
-    max-height: 520px;
-
-    object-fit: contain;
-}
-
-
-/* ==========================================================
-   BUTTONS
-   ========================================================== */
-
-.hero-buttons {
-    display: flex;
-
-    flex-wrap: wrap;
-
-    gap: 14px;
-
-    margin-top: 32px;
-}
-
-.primary-button {
-    border: none;
-
-    padding:
-        13px 22px;
-
-    border-radius:
-        999px;
-
-    background:
-        var(--primary-color);
-
-    color: white;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition:
-        transform 0.2s ease,
-        opacity 0.2s ease;
-}
-
-.primary-button:hover {
-    transform:
-        translateY(-2px);
-
-    opacity: 0.9;
-}
-
-
-/* ==========================================================
-   SECTIONS
-   ========================================================== */
-
-.section {
-    max-width: 1280px;
-
-    margin: 0 auto;
-
-    padding:
-        90px 5%;
-}
-
-.section-header {
-    max-width: 760px;
-
-    margin-bottom: 45px;
-}
-
-.section-header h2,
-.cta h2 {
-    margin:
-        0 0 18px;
-
-    font-size:
-        clamp(34px, 4vw, 54px);
-
-    line-height: 1.08;
-
-    letter-spacing:
-        -0.03em;
-}
-
-.section-header p,
-.cta p {
-    margin: 0;
-
-    font-size: 18px;
-
-    line-height: 1.6;
-
-    opacity: 0.72;
-}
-
-
-/* ==========================================================
-   FEATURES
-   ========================================================== */
-
-.card-grid {
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            3,
-            minmax(0, 1fr)
-        );
-
-    gap: 18px;
-}
-
-.card {
-    min-height: 220px;
-
-    overflow: hidden;
-
-    border-radius: 18px;
-
-    background:
-        var(--secondary-color);
-
-    transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease;
-}
-
-.card:hover {
-    transform:
-        translateY(-4px);
-
-    box-shadow:
-        0 18px 45px
-        rgba(0, 0, 0, 0.08);
-}
-
-.card-image {
-    width: 100%;
-
-    height: 180px;
-
-    overflow: hidden;
-}
-
-.card-image img {
-    width: 100%;
-
-    height: 100%;
-
-    object-fit: cover;
-}
-
-.card-content {
-    padding: 26px;
-}
-
-.card h3 {
-    margin:
-        0 0 10px;
-
-    font-size: 20px;
-}
-
-.card p {
-    margin: 0;
-
-    line-height: 1.55;
-
-    opacity: 0.75;
-}
-
-
-/* ==========================================================
-   STATS
-   ========================================================== */
-
-.stats-section {
-    max-width: 1280px;
-
-    margin: 0 auto;
-
-    padding:
-        70px 5%;
-}
-
-.stats-grid {
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            4,
-            minmax(0, 1fr)
-        );
-
-    gap: 24px;
-}
-
-.stat-card {
-    padding: 30px;
-
-    text-align: center;
-}
-
-.stat-card h3 {
-    margin:
-        0 0 10px;
-
-    font-size: 38px;
-
-    line-height: 1.1;
-}
-
-.stat-card p {
-    margin: 0;
-
-    line-height: 1.5;
-
-    opacity: 0.72;
-}
-
-
-/* ==========================================================
-   CUSTOMERS
-   ========================================================== */
-
-.customers {
-    padding-top: 80px;
-}
-
-.customer-grid {
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            3,
-            minmax(0, 1fr)
-        );
-
-    gap: 20px;
-}
-
-
-/* ==========================================================
-   CTA
-   ========================================================== */
-
-.cta {
-    max-width: 1160px;
-
-    margin:
-        60px auto;
-
-    padding:
-        70px;
-
-    border-radius: 28px;
-
-    background:
-        var(--primary-color);
-
-    color: white;
-}
-
-.cta-content {
-    max-width: 750px;
-}
-
-
-/* ==========================================================
-   FOOTER
-   ========================================================== */
-
-.footer {
-    margin-top: 80px;
-
-    padding:
-        60px 5%;
-
-    background:
-        #f8fafc;
-}
-
-.footer-inner {
-    max-width: 1280px;
-
-    margin: 0 auto;
-
-    display: flex;
-
-    justify-content: space-between;
-
-    gap: 50px;
-}
-
-.footer-brand {
-    max-width: 400px;
-}
-
-.footer-brand h3 {
-    margin:
-        0 0 12px;
-}
-
-.footer-brand p {
-    line-height: 1.6;
-
-    opacity: 0.7;
-}
-
-.footer-links {
-    display: flex;
-
-    flex-wrap: wrap;
-
-    gap: 20px;
-
-    align-content: flex-start;
-}
-
-.footer-links a {
-    opacity: 0.75;
-}
-
-.footer-links a:hover {
-    opacity: 1;
-}
-
-
-/* ==========================================================
-   TABLET
-   ========================================================== */
-
-@media (max-width: 900px) {
-
-    .nav-links {
-        gap: 14px;
-    }
-
-    .hero {
-        min-height: auto;
-
-        padding:
-            70px 5%;
-    }
-
-    .hero-split {
-        flex-direction: column;
-
-        gap: 40px;
-    }
-
-    .hero-visual {
-        width: 100%;
-    }
-
-    .card-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
-    .stats-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
-    .customer-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
-    .footer-inner {
-        flex-direction: column;
-    }
-}
-
-
-/* ==========================================================
-   MOBILE
-   ========================================================== */
-
-@media (max-width: 600px) {
-
-    .navbar {
-        padding:
-            16px 5%;
-    }
-
-    .nav-links {
-        display: none;
-        flex-direction: column;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 100%;
-        background: var(--background-color);
-        padding: 20px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        text-align: center;
-        gap: 20px;
-    }
-
-    .nav-links.open {
-        display: flex;
-    }
-
-    .mobile-menu {
-        display: block;
-    }
-
-    .hero {
-        padding:
-            60px 5%;
-    }
-
-    .hero h1 {
-        font-size:
-            clamp(38px, 12vw, 56px);
-    }
-
-    .hero p {
-        font-size: 17px;
-    }
-
-    .section {
-        padding:
-            60px 5%;
-    }
-
-    .stats-section {
-        padding:
-            50px 5%;
-    }
-
-    .card-grid,
-    .stats-grid,
-    .customer-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .cta {
-        margin:
-            40px 5%;
-
-        padding:
-            45px 25px;
-    }
-
-    .footer {
-        padding:
-            50px 5%;
-    }
-
-    .footer-links {
-        flex-direction: column;
-    }
-}
-
-`;
-
-    await writeGeneratedFile(
-        "src/styles.css",
-        styles
-    );
-
+    await writeGeneratedFile("src/styles.css", styles);
     return styles;
-}
-
-
-// ============================================================
-// 7. Generate index.html
-// ============================================================
-
-export async function generateIndexFile(
-    websiteSpec
-) {
-    const title =
-        websiteSpec.metadata?.title ||
-        "Generated Website";
-
-    const indexCode = `
-<!doctype html>
-
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8" />
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    />
-
-    <title>
-        ${escapeHtml(title)}
-    </title>
-
-</head>
-
-<body>
-
-    <div id="root"></div>
-
-    <script
-        type="module"
-        src="/src/main.jsx"
-    ></script>
-
-</body>
-
-</html>
-`;
-
-    await writeGeneratedFile(
-        "index.html",
-        indexCode
-    );
-
-    return indexCode;
-}
-
-
-// ============================================================
-// 8. Generate package.json
-// ============================================================
-
-export async function generatePackageFile() {
-
-    const packageJson = {
-        name: "soulclone-generated-site",
-
-        version: "1.0.0",
-
-        private: true,
-
-        type: "module",
-
-        scripts: {
-            dev: "vite",
-            build: "vite build",
-            preview: "vite preview"
-        },
-
-        dependencies: {
-            react: "^19.1.0",
-            "react-dom": "^19.1.0",
-            vite: "^7.1.7"
-        }
-    };
-
-
-    const packageCode = JSON.stringify(
-        packageJson,
-        null,
-        4
-    );
-
-
-    await writeGeneratedFile(
-        "package.json",
-        packageCode
-    );
-
-    return packageCode;
 }
