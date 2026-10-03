@@ -4,7 +4,8 @@ import { extractDOM } from "./domExtractor.js";
 import { extractStructure } from "./structureExtractor.js";
 import { extractStyles } from "./cssExtractor.js";
 import { extractAssets } from "./assetExtractor.js";
-import { captureScreenshot } from "./screenshot.js";
+import { captureScreenshot, captureVisualScreenshot } from "./screenshot.js";
+import { analyzeScreenshot } from "../ai/visionAgent.js";
 import { analyzeResponsive } from "./responsiveAnalyzer.js";
 
 import { buildWebsiteSpec } from "../analyzer/specBuilder.js";
