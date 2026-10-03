@@ -46,16 +46,42 @@ export async function extractDOM(page) {
         const images = Array.from(
             document.querySelectorAll("img")
         ).map((element) => ({
-            src: element.src,
-            alt: element.alt || null
+            src: element.currentSrc || element.src,
+            alt: element.alt || null,
+            width: element.naturalWidth || null,
+            height: element.naturalHeight || null
         }));
+
+        // Capture visible non-heading text that often contains important
+        // card/list content (city names, categories, labels, etc.).
+        const textBlocks = Array.from(
+            document.querySelectorAll("li, [role='listitem'], [role='heading'], div, span")
+        )
+            .filter(isVisible)
+            .map((element) => getText(element))
+            .filter((text) => text && text.length >= 2 && text.length <= 120)
+            .filter((text, index, all) => all.indexOf(text) === index)
+            .slice(0, 80);
+
+        const controls = Array.from(
+            document.querySelectorAll("input, textarea, select")
+        )
+            .filter(isVisible)
+            .map((element) => ({
+                type: element.tagName.toLowerCase(),
+                placeholder: element.getAttribute("placeholder"),
+                ariaLabel: element.getAttribute("aria-label"),
+                value: element.value || null
+            }));
 
         return {
             headings,
             paragraphs,
             links,
             buttons,
-            images
+            images,
+            textBlocks,
+            controls
         };
     });
 
