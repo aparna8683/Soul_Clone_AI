@@ -1,4 +1,4 @@
-import { runAI } from "../ai/groq.js";
+import { runAI, runVisionAI } from "../ai/groq.js";
 import { writeGeneratedFile } from "./fileGenerator.js";
 
 
@@ -13,7 +13,8 @@ export async function generateReactSpec(
     const input = {
         page: {
             title: websiteSpec.metadata.title,
-            url: websiteSpec.metadata.url
+            url: websiteSpec.metadata.url,
+            brandName: websiteSpec.metadata.brandName || null
         },
 
         componentPlan,
@@ -86,6 +87,22 @@ export async function generateReactSpec(
         },
 
         visualAnalysis: websiteSpec.visualAnalysis || null,
+
+        sectionEvidence: (websiteSpec.sectionEvidence || [])
+            .slice(0, 10)
+            .map((evidence) => ({
+                sectionIndex: evidence.sectionIndex,
+                heading: evidence.heading,
+                width: evidence.width,
+                height: evidence.height,
+                hasVisualEvidence: Boolean(evidence.visuals?.length),
+                visualAssets: (evidence.visuals || []).map((visual, index) => ({
+                    id: `section-visual-${evidence.sectionIndex}-${index + 1}`,
+                    width: visual.width,
+                    height: visual.height,
+                    score: visual.score
+                }))
+            })),
 
         design: {
             body: websiteSpec.design.styles?.body,
@@ -168,11 +185,13 @@ Use exactly this structure:
 Rules:
 
 1. Use the supplied website evidence.
-2. Treat visualAnalysis as first-class evidence for layout and visual hierarchy.
-3. Follow the component plan.
-4. Preserve important visible text.
-5. Identify the major page sections.
-6. Use supplied asset IDs when an image is relevant.
+2. Treat the supplied screenshot as the PRIMARY visual source of truth.
+3. Treat visualAnalysis, DOM text, geometry, CSS and section evidence as supporting evidence.
+4. Follow the component plan without forcing sections into generic templates.
+5. Preserve exact visible text from the supplied DOM whenever possible.
+6. Never invent or remove CTA/button text when source text exists.
+7. Identify the major page sections.
+8. Use supplied asset IDs when an image is relevant.
 6. Do not invent large amounts of content.
 7. Keep the structure concise.
 8. Do not reproduce HTML.
@@ -183,17 +202,21 @@ Rules:
 13. Use navItems for navigation links instead of placing them in items.
 15. For images, return the supplied asset ID such as "assets/img-0".
 16. Prefer faithful reconstruction over generic UI patterns.
-17. Use section media evidence to associate the correct image with the section.
-18. If a section contains a large visual, use it as a primary visual rather than rendering it as a small card.
+17. The screenshot is authoritative for visual composition: reproduce the visible proportions, whitespace, alignment, scale and hierarchy.
+18. Do not substitute a generic gradient/card for a visible product UI or illustration.
+19. If section evidence identifies a captured visual asset, prefer that exact local visual asset.
+20. Keep buttons and navigation labels exactly as extracted unless the source visibly has no label.
+21. Use section media evidence to associate the correct image with the section.
+22. If a section contains a large visual, use it as a primary visual rather than rendering it as a small card.
 19. For product/marketing pages, prefer showcase or split sections when the source visibly uses large product screenshots beside text.
 20. Use visual.minHeight/contentWidth/imageWidth to preserve the measured composition.
 21. Use logos for repeated brand/logo areas and testimonial for quoted customer content.
 22. Do not turn large visual regions into generic 3-column cards.
 23. Preserve large whitespace only when the source screenshot clearly contains it.
 24. The generated page should feel like the source's composition, not a generic landing-page template.
-17. Do not invent images when no suitable asset exists.
-18. Preserve the original section order.
-19. Use the original text whenever it is available.
+25. Do not invent images when no suitable asset exists.
+26. Preserve the original section order.
+27. Use the original text whenever it is available.
 
 Website evidence:
 
@@ -206,11 +229,17 @@ ${JSON.stringify(input)}
         "characters"
     );
 
-    const response = await runAI(prompt, {
-        temperature: 0.2,
-        max_completion_tokens: 1400,
-        response_format: { type: "json_object" }
-    });
+    const response = await runVisionAI(
+        prompt,
+        [websiteSpec.visualScreenshot],
+        {
+            temperature: 0.2,
+            max_completion_tokens: 1500,
+            response_format: { type: "json_object" },
+            reasoning_effort: "none",
+            timeout: 60000
+        }
+    );
 
     const parsed = JSON.parse(response);
     return enrichReactSpec(parsed, websiteSpec);
@@ -301,6 +330,10 @@ function enrichReactSpec(reactSpec, websiteSpec) {
 
   const sourceSections = websiteSpec?.structure?.sections || [];
   const sourceImages = websiteSpec?.assets?.images || [];
+  const sectionEvidence = websiteSpec?.sectionEvidence || [];
+  const sourceButtons = (websiteSpec?.content?.buttons || [])
+    .filter((button) => button?.text)
+    .slice(0, 8);
 
   const findSourceSection = (section) => {
     const heading = String(section?.title || "").trim().toLowerCase();
@@ -318,6 +351,13 @@ function enrichReactSpec(reactSpec, websiteSpec) {
 
   const imageById = new Map(
     sourceImages.map((image, index) => [`assets/img-${index}`, image])
+  );
+
+  const evidenceByIndex = new Map(
+    sectionEvidence.map((evidence) => [
+      evidence.sectionIndex,
+      evidence
+    ])
   );
 
   const isBadFeatureImage = (image) => {
@@ -348,6 +388,9 @@ function enrichReactSpec(reactSpec, websiteSpec) {
   for (const section of result.sections) {
     const source = findSourceSection(section);
     const media = source?.media || [];
+    const evidence = source
+      ? evidenceByIndex.get(source.sectionIndex)
+      : null;
 
     if (Array.isArray(section.items)) {
       section.items = section.items.map((item) => ({ ...item }));
@@ -374,6 +417,18 @@ function enrichReactSpec(reactSpec, websiteSpec) {
           });
         }
       }
+    }
+
+    // A captured visual is stronger than a guessed/generated visual.
+    // It is only used when the browser detected a substantial non-image
+    // visual region such as a dashboard, preview, canvas, SVG or mockup.
+    if (
+      !section.image &&
+      evidence?.visuals?.length
+    ) {
+      section.image =
+        `/assets/sections/section-${evidence.sectionIndex}-visual-1.png`;
+      section.imageAspectRatio = "wide";
     }
 
     if (!section.image && media.length) {
@@ -430,6 +485,33 @@ function enrichReactSpec(reactSpec, websiteSpec) {
       };
     }
 
+    if (
+      ["hero", "cta"].includes(section.type) &&
+      (!Array.isArray(section.buttons) ||
+        !section.buttons.some((button) => button?.text))
+    ) {
+      const sourceY = Number(source?.position?.y || 0);
+      const sourceBottom =
+        sourceY + Number(source?.size?.height || 0);
+
+      const nearbyButtons = sourceButtons.filter((button) => {
+        const y = Number(button.y || 0);
+        return (
+          !source ||
+          (y >= sourceY - 80 && y <= sourceBottom + 80)
+        );
+      });
+
+      if (nearbyButtons.length) {
+        section.buttons = nearbyButtons
+          .slice(0, 2)
+          .map((button) => ({
+            text: button.text,
+            url: button.url || "#"
+          }));
+      }
+    }
+
     if (section.type === "hero") {
       section.layout = section.image ? "center" : (section.layout || "center");
       section.visual = {
@@ -451,13 +533,8 @@ function createAppComponent(reactSpec, websiteSpec) {
   const sections = reactSpec.sections || [];
 
   const getSiteName = () => {
-    const title = websiteSpec?.metadata?.title;
-
-    if (title && title.trim()) {
-      return title
-        .split(/\\||\\s[–—-]\\s/)
-        .map((part) => part.trim())
-        .filter(Boolean)[0] || title.trim();
+    if (websiteSpec?.metadata?.brandName?.trim()) {
+      return websiteSpec.metadata.brandName.trim();
     }
 
     try {
@@ -465,7 +542,8 @@ function createAppComponent(reactSpec, websiteSpec) {
         .replace("www.", "")
         .split(".")[0];
     } catch {
-      return "Website";
+      const title = websiteSpec?.metadata?.title;
+      return title?.trim() || "Website";
     }
   };
 
@@ -486,6 +564,10 @@ function createAppComponent(reactSpec, websiteSpec) {
     }
 
     return buttons
+      .filter((button) => {
+        const text = button?.text || button;
+        return String(text || "").trim().length > 0;
+      })
       .map((button, index) => {
         const text = button.text || button;
         const url = button.url || "#";

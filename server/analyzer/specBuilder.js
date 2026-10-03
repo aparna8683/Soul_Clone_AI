@@ -8,12 +8,14 @@ export function buildWebsiteSpec({
     screenshot,
     visualScreenshot,
     responsive,
-    visualAnalysis
+    visualAnalysis,
+    sectionEvidence = []
 }) {
     return {
         metadata: {
             url,
-            title
+            title,
+            brandName: dom.brandName || null
         },
 
         content: {
@@ -27,7 +29,8 @@ export function buildWebsiteSpec({
 
         structure: {
             sections: structure.sections,
-            landmarks: structure.landmarks || []
+            landmarks: structure.landmarks || [],
+            visualBlocks: structure.visualBlocks || []
         },
 
         design: {
@@ -42,6 +45,7 @@ export function buildWebsiteSpec({
 
         screenshot,
         visualScreenshot,
+        sectionEvidence,
 
         responsive,
         visualAnalysis: visualAnalysis || null

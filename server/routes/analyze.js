@@ -17,7 +17,7 @@ import { captureGeneratedScreenshot } from "../preview/previewScreenshot.js";
 import { critiqueGeneratedWebsite } from "../ai/visualCritic.js";
 import { compareScreenshots } from "../ai/visualDiff.js";
 import { repairReactSpecVisually } from "../ai/visualRepairAgent.js";
-import { downloadAssets } from "../browser/assetDownloader.js";
+import { downloadAssets, copySectionEvidence } from "../browser/assetDownloader.js";
 import { setLatestWebsiteSpec } from "../state.js";
 
 const router = express.Router();
@@ -261,6 +261,7 @@ router.post("/", async (req, res) => {
 
         console.log("🖼️ Preparing local assets...");
         await downloadAssets(websiteSpec, generatedDir);
+        await copySectionEvidence(websiteSpec, generatedDir);
 
         await writeGeneratedProject(
             reactSpec,
