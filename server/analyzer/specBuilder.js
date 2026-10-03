@@ -6,7 +6,8 @@ export function buildWebsiteSpec({
     styles,
     assets,
     screenshot,
-    responsive
+    responsive,
+    visualAnalysis
 }) {
     return {
         metadata: {
@@ -18,7 +19,9 @@ export function buildWebsiteSpec({
             headings: dom.headings,
             paragraphs: dom.paragraphs,
             links: dom.links,
-            buttons: dom.buttons
+            buttons: dom.buttons,
+            textBlocks: dom.textBlocks || [],
+            controls: dom.controls || []
         },
 
         structure: {
@@ -37,6 +40,7 @@ export function buildWebsiteSpec({
 
         screenshot,
 
-        responsive 
+        responsive,
+        visualAnalysis: visualAnalysis || null
     };
 }
