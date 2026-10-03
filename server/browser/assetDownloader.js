@@ -61,3 +61,54 @@ export async function downloadAssets(websiteSpec, generatedDir) {
 
     return websiteSpec;
 }
+
+
+export async function copySectionEvidence(websiteSpec, generatedDir) {
+    const evidence = websiteSpec?.sectionEvidence || [];
+    const outputDir = path.join(
+        generatedDir,
+        "public",
+        "assets",
+        "sections"
+    );
+
+    await fs.mkdir(outputDir, { recursive: true });
+
+    let copied = 0;
+
+    for (const section of evidence) {
+        const files = [
+            {
+                source: section.path,
+                target: path.join(
+                    outputDir,
+                    `section-${section.sectionIndex}.png`
+                )
+            },
+            ...(section.visuals || []).map((visual, index) => ({
+                source: visual.path,
+                target: path.join(
+                    outputDir,
+                    `section-${section.sectionIndex}-visual-${index + 1}.png`
+                )
+            }))
+        ];
+
+        for (const file of files) {
+            if (!file.source) continue;
+
+            try {
+                await fs.copyFile(file.source, file.target);
+                copied++;
+            } catch (error) {
+                console.warn(
+                    "⚠️ Could not copy section evidence:",
+                    error.message
+                );
+            }
+        }
+    }
+
+    console.log(`🧩 Local section evidence prepared: ${copied} file(s)`);
+    return websiteSpec;
+}
