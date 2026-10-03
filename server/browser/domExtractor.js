@@ -17,6 +17,25 @@ export async function extractDOM(page) {
             );
         };
 
+        const brandCandidates = Array.from(
+            document.querySelectorAll("header a, nav a, a[aria-label], a[title]")
+        )
+            .filter(isVisible)
+            .map((element) => ({
+                text: getText(element),
+                ariaLabel: element.getAttribute("aria-label"),
+                title: element.getAttribute("title"),
+                alt: element.querySelector("img")?.alt || null
+            }))
+            .filter((item) => item.text || item.ariaLabel || item.title || item.alt);
+
+        const brandName =
+            brandCandidates[0]?.text ||
+            brandCandidates[0]?.ariaLabel ||
+            brandCandidates[0]?.title ||
+            brandCandidates[0]?.alt ||
+            null;
+
         const headings = Array.from(
             document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         ).map((element) => ({
@@ -87,6 +106,7 @@ export async function extractDOM(page) {
             }));
 
         return {
+            brandName,
             headings,
             paragraphs,
             links,
