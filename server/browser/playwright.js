@@ -62,6 +62,12 @@ export async function analyzeWebsite(url) {
         console.log("📸 Capturing screenshot...");
         const screenshot = await captureScreenshot(page);
 
+        console.log("🖼️ Capturing visual-analysis screenshot...");
+        const visualScreenshot = await captureVisualScreenshot(page);
+
+        console.log("👁️ Running visual analysis...");
+        const visualAnalysis = await analyzeScreenshot(visualScreenshot);
+
         console.log("📱 Analyzing responsive behavior...");
         const responsive = await analyzeResponsive(page);
 
@@ -73,7 +79,9 @@ export async function analyzeWebsite(url) {
             styles,
             assets,
             screenshot,
-            responsive
+            visualScreenshot,
+            responsive,
+            visualAnalysis
         });
 
         console.log("✅ WebsiteSpec created");
