@@ -30,7 +30,7 @@ export async function generateReactSpec(
             })),
 
         structure: websiteSpec.structure.sections
-            .slice(0, 10)
+            .slice(0, 14)
             .map((section) => ({
                 tag: section.tag,
                 heading: section.heading,
@@ -38,10 +38,26 @@ export async function generateReactSpec(
                 y: section.position?.y,
                 width: section.size?.width,
                 height: section.size?.height,
-                columns: section.columns,
+                columns: section.gridColumns,
                 isFullWidth: section.size?.width > 1000,
                 background: section.backgroundColor,
-                display: section.display
+                backgroundImage: section.backgroundImage,
+                display: section.display,
+                flexDirection: section.flexDirection,
+                borderRadius: section.borderRadius,
+                padding: section.padding,
+                gap: section.gap,
+                media: (section.media || []).map((media) => ({
+                    assetId: `assets/img-${media.assetIndex}`,
+                    alt: media.alt,
+                    width: media.width,
+                    height: media.height,
+                    naturalWidth: media.naturalWidth,
+                    naturalHeight: media.naturalHeight,
+                    role: media.role,
+                    x: media.x,
+                    y: media.y
+                }))
             })),
 
         content: {
@@ -83,12 +99,14 @@ export async function generateReactSpec(
         // Do NOT send huge image URLs to the AI.
         // Give each image a compact ID instead.
         assets: websiteSpec.assets.images
-            .slice(0, 8)
+            .slice(0, 20)
             .map((image, index) => ({
                 id: `img-${index}`,
+                src: image.src,
                 alt: image.alt,
                 width: image.width,
-                height: image.height
+                height: image.height,
+                local: Boolean(image.local)
             }))
     };
 
@@ -114,7 +132,7 @@ Use exactly this structure:
 
     "sections": [
         {
-            "type": "navbar | hero | search | features | stats | customers | resources | cta | footer",
+            "type": "navbar | hero | showcase | split | search | features | stats | logos | customers | resources | testimonial | cta | footer",
             "title": "string",
             "description": "string",
             "buttons": [{"text": "string", "url": "string"}],
@@ -123,6 +141,14 @@ Use exactly this structure:
             "background": "string",
             "image": "string",
             "imageAspectRatio": "auto | square | video | wide",
+            "visual": {
+                "minHeight": 0,
+                "contentWidth": 0,
+                "imageWidth": 0,
+                "imagePosition": "none | below | left | right | background",
+                "imageOverlap": 0,
+                "spacing": "string"
+            },
             "navItems": ["string"],
             "items": [
                 {
@@ -153,6 +179,14 @@ Rules:
 13. Use navItems for navigation links instead of placing them in items.
 15. For images, return the supplied asset ID such as "assets/img-0".
 16. Prefer faithful reconstruction over generic UI patterns.
+17. Use section media evidence to associate the correct image with the section.
+18. If a section contains a large visual, use it as a primary visual rather than rendering it as a small card.
+19. For product/marketing pages, prefer showcase or split sections when the source visibly uses large product screenshots beside text.
+20. Use visual.minHeight/contentWidth/imageWidth to preserve the measured composition.
+21. Use logos for repeated brand/logo areas and testimonial for quoted customer content.
+22. Do not turn large visual regions into generic 3-column cards.
+23. Preserve large whitespace only when the source screenshot clearly contains it.
+24. The generated page should feel like the source's composition, not a generic landing-page template.
 17. Do not invent images when no suitable asset exists.
 18. Preserve the original section order.
 19. Use the original text whenever it is available.
@@ -170,7 +204,9 @@ ${JSON.stringify(input)}
 
     const response = await runAI(prompt);
 
-    return JSON.parse(response);
+    const parsed = JSON.parse(response);
+    return enrichReactSpec(parsed, websiteSpec);
+
 }
 
 
@@ -246,6 +282,106 @@ function slugify(value = "") {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+function enrichReactSpec(reactSpec, websiteSpec) {
+  const result = {
+    ...reactSpec,
+    sections: Array.isArray(reactSpec?.sections)
+      ? reactSpec.sections.map((section) => ({ ...section }))
+      : []
+  };
+
+  const sourceSections = websiteSpec?.structure?.sections || [];
+  const sourceImages = websiteSpec?.assets?.images || [];
+
+  const findSourceSection = (section) => {
+    const heading = String(section?.title || "").trim().toLowerCase();
+    if (!heading) return null;
+
+    return sourceSections.find((candidate) => {
+      const candidateHeading = String(candidate?.heading || "").trim().toLowerCase();
+      return candidateHeading && (
+        candidateHeading === heading ||
+        candidateHeading.includes(heading) ||
+        heading.includes(candidateHeading)
+      );
+    });
+  };
+
+  for (const section of result.sections) {
+    const source = findSourceSection(section);
+    const media = source?.media || [];
+
+    if (!section.image && media.length) {
+      const preferred = media.find((item) => item.role === "large-visual") || media[0];
+      section.image = `assets/img-${preferred.assetIndex}`;
+      section.imageAspectRatio =
+        preferred.width / Math.max(preferred.height, 1) > 1.7
+          ? "wide"
+          : preferred.width / Math.max(preferred.height, 1) > 1.35
+            ? "video"
+            : "auto";
+    }
+
+    const selectedIndex = String(section.image || "").match(/img-(\d+)/)?.[1];
+    const selectedImage = selectedIndex != null
+      ? sourceImages[Number(selectedIndex)]
+      : null;
+
+    const hasLargeVisual =
+      media.some((item) => item.role === "large-visual") ||
+      Boolean(selectedImage && (selectedImage.width >= 700 || selectedImage.height >= 450));
+
+    if (hasLargeVisual) {
+      if (section.type === "features" && section.image) {
+        section.type = "split";
+        section.layout = section.layout === "right" ? "split-right" : "split";
+      }
+
+      if (section.type === "customers" && section.image) {
+        section.type = "showcase";
+      }
+
+      section.visual = {
+        minHeight: Math.max(
+          420,
+          Math.min(760, Number(source?.size?.height || 520))
+        ),
+        contentWidth: Math.min(
+          820,
+          Math.max(420, Number(source?.size?.width || 900) * 0.46)
+        ),
+        imageWidth: Math.min(
+          1200,
+          Math.max(520, Number(selectedImage?.width || 1000))
+        ),
+        imagePosition:
+          section.type === "hero"
+            ? "below"
+            : section.layout === "split-right"
+              ? "left"
+              : "right",
+        imageOverlap: section.type === "hero" ? 24 : 0,
+        spacing: source?.gap || "48px"
+      };
+    }
+
+    if (section.type === "hero") {
+      section.layout = section.image ? "center" : (section.layout || "center");
+      section.visual = {
+        ...(section.visual || {}),
+        minHeight: Math.max(560, Number(source?.size?.height || 650)),
+        contentWidth: Math.min(900, Number(section.visual?.contentWidth || 820)),
+        imageWidth: Math.min(1180, Number(section.visual?.imageWidth || 1080)),
+        imagePosition: section.image ? "below" : "none",
+        imageOverlap: Number(section.visual?.imageOverlap || 24)
+      };
+    }
+  }
+
+  return result;
+}
+
 
 function createAppComponent(reactSpec, websiteSpec) {
   const sections = reactSpec.sections || [];
