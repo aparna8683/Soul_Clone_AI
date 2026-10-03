@@ -12,6 +12,7 @@ function App() {
     const [modifyLoading, setModifyLoading] = useState(false);
     const [modifyStatus, setModifyStatus] = useState("");
     const [previewUrl, setPreviewUrl] = useState("");
+    const [visualCritique, setVisualCritique] = useState(null);
 
     const handleGenerate = async () => {
         if (!url) return;
@@ -19,6 +20,7 @@ function App() {
         setGeneratedSuccess(false);
         setReactSpec(null);
         setWebsiteSpec(null);
+        setVisualCritique(null);
         setStatus("Analyzing website...");
 
         try {
@@ -39,6 +41,7 @@ function App() {
             setReactSpec(data.reactSpec);
             setWebsiteSpec(data.websiteSpec);
             setPreviewUrl(data.previewUrl || "");
+            setVisualCritique(data.visualCritique || null);
             
             if (data.buildResult && data.buildResult.success) {
                 setStatus("Build validated successfully!");
@@ -140,6 +143,25 @@ function App() {
                                 )}
                             </div>
                         </section>
+
+                        {visualCritique && (
+                            <section className="success-section">
+                                <div className="success-card">
+                                    <h3>👁️ Visual QA: {visualCritique.overall || "completed"}</h3>
+                                    {visualCritique.issues?.length ? (
+                                        <ul>
+                                            {visualCritique.issues.slice(0, 5).map((issue, index) => (
+                                                <li key={index}>
+                                                    <strong>{issue.severity}</strong>: {issue.issue}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p>No major visual differences were detected in the generated preview.</p>
+                                    )}
+                                </div>
+                            </section>
+                        )}
 
                         <section className="modify-section">
                             <h3>Modify Generated Website</h3>
