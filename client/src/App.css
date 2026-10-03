@@ -237,3 +237,11 @@
     padding: 16px;
   }
 }
+
+
+.preview-link {
+  display: inline-flex;
+  margin-top: 14px;
+  color: var(--primary);
+  font-weight: 600;
+}
