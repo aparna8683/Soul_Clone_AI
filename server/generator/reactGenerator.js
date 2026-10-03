@@ -390,7 +390,10 @@ function createAppComponent(reactSpec, websiteSpec) {
     const title = websiteSpec?.metadata?.title;
 
     if (title && title.trim()) {
-      return title.split("|")[0].trim();
+      return title
+        .split(/\\||\\s[–—-]\\s/)
+        .map((part) => part.trim())
+        .filter(Boolean)[0] || title.trim();
     }
 
     try {
