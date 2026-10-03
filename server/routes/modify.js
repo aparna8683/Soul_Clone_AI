@@ -26,10 +26,10 @@ router.post("/", async (req, res) => {
         const aiPrompt = `
 You are a React UI architecture modifier.
 
-User instruction: "${prompt}"
+User instruction: "${userPrompt}"
 
 Current React Specification:
-${JSON.stringify(currentReactSpec)}
+${JSON.stringify(currentSpec)}
 
 Modify the JSON according to the user instruction.
 Do NOT rewrite the entire project or change unrelated sections.
