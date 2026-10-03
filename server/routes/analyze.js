@@ -76,7 +76,7 @@ router.post("/", async (req, res) => {
                 console.log("📸 Generated screenshot captured");
 
                 visualCritique = await critiqueGeneratedWebsite(
-                    websiteSpec.screenshot,
+                    websiteSpec.visualScreenshot || websiteSpec.screenshot,
                     generatedScreenshot
                 );
 
