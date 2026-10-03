@@ -7,6 +7,7 @@ import { extractAssets } from "./assetExtractor.js";
 import { captureScreenshot, captureVisualScreenshot } from "./screenshot.js";
 import { analyzeScreenshot } from "../ai/visionAgent.js";
 import { analyzeResponsive } from "./responsiveAnalyzer.js";
+import { captureSectionEvidence } from "./sectionScreenshot.js";
 
 import { buildWebsiteSpec } from "../analyzer/specBuilder.js";
 
@@ -77,6 +78,12 @@ export async function analyzeWebsite(url) {
             );
         }
 
+        console.log("🧩 Capturing section evidence...");
+        const sectionEvidence = await captureSectionEvidence(
+            page,
+            structure.sections
+        );
+
         console.log("📱 Analyzing responsive behavior...");
         const responsive = await analyzeResponsive(page);
 
@@ -90,7 +97,8 @@ export async function analyzeWebsite(url) {
             screenshot,
             visualScreenshot,
             responsive,
-            visualAnalysis
+            visualAnalysis,
+            sectionEvidence
         });
 
         console.log("✅ WebsiteSpec created");
