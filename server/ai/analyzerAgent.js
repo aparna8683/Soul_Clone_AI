@@ -46,18 +46,39 @@ const aiInput = {
         })),
 
     sections: websiteSpec.structure.sections
-        .slice(0, 12)
+        .slice(0, 14)
         .map((section) => ({
             tag: section.tag,
             heading: section.heading || null,
             width: section.size?.width,
             height: section.size?.height,
             y: section.position?.y,
-            background: section.backgroundColor
+            background: section.backgroundColor,
+            display: section.display,
+            flexDirection: section.flexDirection,
+            media: (section.media || []).map((media) => ({
+                assetId: `img-${media.assetIndex}`,
+                width: media.width,
+                height: media.height,
+                role: media.role
+            }))
+        })),
+
+    visualBlocks: (websiteSpec.structure.visualBlocks || [])
+        .slice(0, 20)
+        .map((block) => ({
+            tag: block.tag,
+            className: block.className,
+            x: block.position?.x,
+            y: block.position?.y,
+            width: block.size?.width,
+            height: block.size?.height,
+            background: block.backgroundColor,
+            display: block.display
         })),
 
     images: websiteSpec.assets.images
-        .slice(0, 8)
+         .slice(0, 20)
         .map((image) => ({
             alt: image.alt,
             width: image.width,
@@ -143,11 +164,13 @@ Rules:
 2. Give priority to the visualAnalysis blueprint when it conflicts with weak DOM heuristics.
 3. Identify reusable UI components.
 4. Infer the page type from the provided information.
-5. Use headings, buttons, links, text blocks, controls, sections and images as evidence.
-6. Treat repeated text blocks as possible cards, lists, categories, filters or navigation content.
-7. Do not invent unnecessary components.
-7. Do not reproduce every HTML element.
-8. Keep the component list concise.
+5. Large images and visualBlocks are first-class layout evidence; do not reduce them to generic cards.
+6. Use headings, buttons, links, text blocks, controls, sections, visualBlocks and images as evidence.
+7. Treat repeated text blocks as possible cards, lists, categories, filters or navigation content.
+8. Create components such as ProductShowcase, FeatureSplit, LogoCloud or Testimonial when the evidence supports them.
+9. Do not invent unnecessary components.
+10. Do not reproduce every HTML element.
+11. Keep the component list concise.
 9. Return valid JSON only.
 
 Website information:

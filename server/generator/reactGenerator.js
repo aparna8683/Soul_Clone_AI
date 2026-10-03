@@ -30,7 +30,7 @@ export async function generateReactSpec(
             })),
 
         structure: websiteSpec.structure.sections
-            .slice(0, 10)
+            .slice(0, 14)
             .map((section) => ({
                 tag: section.tag,
                 heading: section.heading,
@@ -38,10 +38,26 @@ export async function generateReactSpec(
                 y: section.position?.y,
                 width: section.size?.width,
                 height: section.size?.height,
-                columns: section.columns,
+                columns: section.gridColumns,
                 isFullWidth: section.size?.width > 1000,
                 background: section.backgroundColor,
-                display: section.display
+                backgroundImage: section.backgroundImage,
+                display: section.display,
+                flexDirection: section.flexDirection,
+                borderRadius: section.borderRadius,
+                padding: section.padding,
+                gap: section.gap,
+                media: (section.media || []).map((media) => ({
+                    assetId: `assets/img-${media.assetIndex}`,
+                    alt: media.alt,
+                    width: media.width,
+                    height: media.height,
+                    naturalWidth: media.naturalWidth,
+                    naturalHeight: media.naturalHeight,
+                    role: media.role,
+                    x: media.x,
+                    y: media.y
+                }))
             })),
 
         content: {
@@ -83,12 +99,14 @@ export async function generateReactSpec(
         // Do NOT send huge image URLs to the AI.
         // Give each image a compact ID instead.
         assets: websiteSpec.assets.images
-            .slice(0, 8)
+            .slice(0, 20)
             .map((image, index) => ({
                 id: `img-${index}`,
+                src: image.src,
                 alt: image.alt,
                 width: image.width,
-                height: image.height
+                height: image.height,
+                local: Boolean(image.local)
             }))
     };
 
@@ -114,7 +132,7 @@ Use exactly this structure:
 
     "sections": [
         {
-            "type": "navbar | hero | search | features | stats | customers | resources | cta | footer",
+            "type": "navbar | hero | showcase | split | search | features | stats | logos | customers | resources | testimonial | cta | footer",
             "title": "string",
             "description": "string",
             "buttons": [{"text": "string", "url": "string"}],
@@ -123,6 +141,14 @@ Use exactly this structure:
             "background": "string",
             "image": "string",
             "imageAspectRatio": "auto | square | video | wide",
+            "visual": {
+                "minHeight": 0,
+                "contentWidth": 0,
+                "imageWidth": 0,
+                "imagePosition": "none | below | left | right | background",
+                "imageOverlap": 0,
+                "spacing": "string"
+            },
             "navItems": ["string"],
             "items": [
                 {
@@ -153,6 +179,14 @@ Rules:
 13. Use navItems for navigation links instead of placing them in items.
 15. For images, return the supplied asset ID such as "assets/img-0".
 16. Prefer faithful reconstruction over generic UI patterns.
+17. Use section media evidence to associate the correct image with the section.
+18. If a section contains a large visual, use it as a primary visual rather than rendering it as a small card.
+19. For product/marketing pages, prefer showcase or split sections when the source visibly uses large product screenshots beside text.
+20. Use visual.minHeight/contentWidth/imageWidth to preserve the measured composition.
+21. Use logos for repeated brand/logo areas and testimonial for quoted customer content.
+22. Do not turn large visual regions into generic 3-column cards.
+23. Preserve large whitespace only when the source screenshot clearly contains it.
+24. The generated page should feel like the source's composition, not a generic landing-page template.
 17. Do not invent images when no suitable asset exists.
 18. Preserve the original section order.
 19. Use the original text whenever it is available.
@@ -170,7 +204,9 @@ ${JSON.stringify(input)}
 
     const response = await runAI(prompt);
 
-    return JSON.parse(response);
+    const parsed = JSON.parse(response);
+    return enrichReactSpec(parsed, websiteSpec);
+
 }
 
 
@@ -247,6 +283,106 @@ function slugify(value = "") {
     .replace(/^-+|-+$/g, "");
 }
 
+function enrichReactSpec(reactSpec, websiteSpec) {
+  const result = {
+    ...reactSpec,
+    sections: Array.isArray(reactSpec?.sections)
+      ? reactSpec.sections.map((section) => ({ ...section }))
+      : []
+  };
+
+  const sourceSections = websiteSpec?.structure?.sections || [];
+  const sourceImages = websiteSpec?.assets?.images || [];
+
+  const findSourceSection = (section) => {
+    const heading = String(section?.title || "").trim().toLowerCase();
+    if (!heading) return null;
+
+    return sourceSections.find((candidate) => {
+      const candidateHeading = String(candidate?.heading || "").trim().toLowerCase();
+      return candidateHeading && (
+        candidateHeading === heading ||
+        candidateHeading.includes(heading) ||
+        heading.includes(candidateHeading)
+      );
+    });
+  };
+
+  for (const section of result.sections) {
+    const source = findSourceSection(section);
+    const media = source?.media || [];
+
+    if (!section.image && media.length) {
+      const preferred = media.find((item) => item.role === "large-visual") || media[0];
+      section.image = `assets/img-${preferred.assetIndex}`;
+      section.imageAspectRatio =
+        preferred.width / Math.max(preferred.height, 1) > 1.7
+          ? "wide"
+          : preferred.width / Math.max(preferred.height, 1) > 1.35
+            ? "video"
+            : "auto";
+    }
+
+    const selectedIndex = String(section.image || "").match(/img-(\d+)/)?.[1];
+    const selectedImage = selectedIndex != null
+      ? sourceImages[Number(selectedIndex)]
+      : null;
+
+    const hasLargeVisual =
+      media.some((item) => item.role === "large-visual") ||
+      Boolean(selectedImage && (selectedImage.width >= 700 || selectedImage.height >= 450));
+
+    if (hasLargeVisual) {
+      if (section.type === "features" && section.image) {
+        section.type = "split";
+        section.layout = section.layout === "right" ? "split-right" : "split";
+      }
+
+      if (section.type === "customers" && section.image) {
+        section.type = "showcase";
+      }
+
+      section.visual = {
+        minHeight: Math.max(
+          420,
+          Math.min(760, Number(source?.size?.height || 520))
+        ),
+        contentWidth: Math.min(
+          820,
+          Math.max(420, Number(source?.size?.width || 900) * 0.46)
+        ),
+        imageWidth: Math.min(
+          1200,
+          Math.max(520, Number(selectedImage?.width || 1000))
+        ),
+        imagePosition:
+          section.type === "hero"
+            ? "below"
+            : section.layout === "split-right"
+              ? "left"
+              : "right",
+        imageOverlap: section.type === "hero" ? 24 : 0,
+        spacing: source?.gap || "48px"
+      };
+    }
+
+    if (section.type === "hero") {
+      section.layout = section.image ? "center" : (section.layout || "center");
+      section.visual = {
+        ...(section.visual || {}),
+        minHeight: Math.max(560, Number(source?.size?.height || 650)),
+        contentWidth: Math.min(900, Number(section.visual?.contentWidth || 820)),
+        imageWidth: Math.min(1180, Number(section.visual?.imageWidth || 1080)),
+        imagePosition: section.image ? "below" : "none",
+        imageOverlap: Number(section.visual?.imageOverlap || 24)
+      };
+    }
+  }
+
+  return result;
+}
+
+
 function createAppComponent(reactSpec, websiteSpec) {
   const sections = reactSpec.sections || [];
 
@@ -254,7 +390,10 @@ function createAppComponent(reactSpec, websiteSpec) {
     const title = websiteSpec?.metadata?.title;
 
     if (title && title.trim()) {
-      return title.split("|")[0].trim();
+      return title
+        .split(/\\||\\s[–—-]\\s/)
+        .map((part) => part.trim())
+        .filter(Boolean)[0] || title.trim();
     }
 
     try {
@@ -411,6 +550,10 @@ function createAppComponent(reactSpec, websiteSpec) {
           <section
             id="${sectionId}"
             className="hero layout-${section.layout || "default"} ${section.background ? "has-bg" : ""}"
+            style={{
+              "--hero-min-height": "${Number(section.visual?.minHeight || 680)}px",
+              "--hero-image-width": "${Number(section.visual?.imageWidth || 1120)}px"
+            }}
           >
             <div className="hero-content">
 
@@ -453,6 +596,91 @@ function createAppComponent(reactSpec, websiteSpec) {
                 : ""
             }
 
+          </section>
+        `;
+      }
+
+      /*
+       * LARGE PRODUCT SHOWCASE
+       */
+      if (type === "showcase") {
+        const imageUrl = resolveImageUrl(section.image, websiteSpec);
+
+        return `
+          <section id="${sectionId}" className="showcase-section layout-${section.layout || "center"}">
+            <div className="showcase-copy">
+              ${section.title ? `<h2>${escapeHtml(section.title)}</h2>` : ""}
+              ${section.description ? `<p>${escapeHtml(section.description)}</p>` : ""}
+              <div className="showcase-actions">${renderButtons(section.buttons)}</div>
+            </div>
+
+            ${imageUrl ? `
+              <div className="showcase-visual">
+                <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(section.title || "Product preview")}" />
+              </div>
+            ` : ""}
+          </section>
+        `;
+      }
+
+      /*
+       * TEXT + VISUAL SPLIT
+       */
+      if (type === "split") {
+        const imageUrl = resolveImageUrl(section.image, websiteSpec);
+        const reverse = section.layout === "split-right";
+
+        return `
+          <section id="${sectionId}" className="split-section ${reverse ? "reverse" : ""}">
+            <div className="split-copy">
+              ${section.title ? `<h2>${escapeHtml(section.title)}</h2>` : ""}
+              ${section.description ? `<p>${escapeHtml(section.description)}</p>` : ""}
+              <div className="split-actions">${renderButtons(section.buttons)}</div>
+            </div>
+
+            ${imageUrl ? `
+              <div className="split-visual">
+                <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(section.title || "Section visual")}" />
+              </div>
+            ` : ""}
+          </section>
+        `;
+      }
+
+      /*
+       * LOGO / BRAND CLOUD
+       */
+      if (type === "logos") {
+        return `
+          <section id="${sectionId}" className="logos-section">
+            ${section.title ? `<p className="logos-eyebrow">${escapeHtml(section.title)}</p>` : ""}
+            <div className="logo-row">
+              ${(section.items || []).map((item) => {
+                const imageUrl = resolveImageUrl(item.image, websiteSpec);
+                return imageUrl
+                  ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(item.title || "Logo")}" />`
+                  : `<span>${escapeHtml(item.title || "")}</span>`;
+              }).join("")}
+            </div>
+          </section>
+        `;
+      }
+
+      /*
+       * TESTIMONIALS
+       */
+      if (type === "testimonial") {
+        return `
+          <section id="${sectionId}" className="testimonial-section">
+            ${section.title ? `<h2>${escapeHtml(section.title)}</h2>` : ""}
+            <div className="testimonial-grid">
+              ${(section.items || []).map((item) => `
+                <article className="testimonial-card">
+                  <p className="testimonial-quote">“${escapeHtml(item.description || item.title || "")}”</p>
+                  ${item.title ? `<div className="testimonial-author">${escapeHtml(item.title)}</div>` : ""}
+                </article>
+              `).join("")}
+            </div>
           </section>
         `;
       }
@@ -1019,6 +1247,179 @@ img { max-width: 100%; display: block; }
   object-fit: contain;
 }
 
+/* Visual reconstruction components */
+.hero.layout-center {
+  flex-direction: column;
+  text-align: center;
+  gap: clamp(44px, 6vw, 88px);
+  min-height: var(--hero-min-height, 680px);
+}
+.hero.layout-center .hero-content {
+  max-width: min(900px, 92vw);
+}
+.hero.layout-center .hero-description {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 720px;
+}
+.hero.layout-center .hero-actions {
+  justify-content: center;
+}
+.hero.layout-center .hero-image {
+  width: min(var(--hero-image-width, 1120px), 92vw);
+  max-width: none;
+  margin-top: 8px;
+}
+.hero.layout-center .hero-image img {
+  width: 100%;
+  max-height: none;
+  object-fit: contain;
+  border-radius: 18px;
+  box-shadow: 0 30px 100px rgba(0,0,0,.22);
+}
+
+.showcase-section,
+.split-section,
+.logos-section,
+.testimonial-section {
+  width: min(var(--max-width), 92vw);
+  margin: 0 auto;
+}
+
+.showcase-section {
+  padding: 110px 0 130px;
+  text-align: center;
+}
+.showcase-copy {
+  max-width: 780px;
+  margin: 0 auto 58px;
+}
+.showcase-copy h2,
+.split-copy h2,
+.testimonial-section h2 {
+  margin: 0 0 18px;
+  font-size: clamp(34px, 5vw, 62px);
+  line-height: 1.02;
+  letter-spacing: -.04em;
+}
+.showcase-copy p,
+.split-copy p {
+  margin: 0 auto;
+  max-width: 680px;
+  font-size: 18px;
+  line-height: 1.65;
+  opacity: .72;
+}
+.showcase-actions,
+.split-actions {
+  margin-top: 28px;
+}
+.showcase-visual {
+  width: min(1180px, 94vw);
+  margin: 0 auto;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(127,127,127,.18);
+  box-shadow: 0 40px 120px rgba(0,0,0,.28);
+  background: rgba(127,127,127,.06);
+}
+.showcase-visual img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.split-section {
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+  align-items: center;
+  gap: clamp(48px, 7vw, 110px);
+  padding: 120px 0;
+}
+.split-section.reverse .split-copy { order: 2; }
+.split-section.reverse .split-visual { order: 1; }
+.split-copy h2 {
+  font-size: clamp(34px, 4.6vw, 58px);
+}
+.split-visual {
+  min-width: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(127,127,127,.18);
+  box-shadow: 0 28px 90px rgba(0,0,0,.2);
+}
+.split-visual img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.logos-section {
+  padding: 80px 0;
+  text-align: center;
+}
+.logos-eyebrow {
+  margin: 0 0 34px;
+  font-size: 14px;
+  opacity: .62;
+  letter-spacing: .04em;
+}
+.logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(28px, 5vw, 70px);
+}
+.logo-row img {
+  width: auto;
+  max-width: 150px;
+  max-height: 42px;
+  object-fit: contain;
+  filter: grayscale(1);
+  opacity: .72;
+}
+.logo-row span {
+  font-size: 18px;
+  font-weight: 600;
+  opacity: .72;
+}
+
+.testimonial-section {
+  padding: 120px 0;
+}
+.testimonial-section h2 {
+  text-align: center;
+  margin-bottom: 52px;
+}
+.testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.testimonial-card {
+  min-height: 260px;
+  padding: 32px;
+  border: 1px solid rgba(127,127,127,.16);
+  border-radius: 20px;
+  background: rgba(127,127,127,.045);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.testimonial-quote {
+  margin: 0;
+  font-size: clamp(18px, 2vw, 25px);
+  line-height: 1.4;
+  letter-spacing: -.015em;
+}
+.testimonial-author {
+  margin-top: 28px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: .68;
+}
+
 /* Buttons */
 .primary-btn, .secondary-btn {
   display: inline-flex;
@@ -1168,6 +1569,33 @@ img { max-width: 100%; display: block; }
     width: calc(100% - 14px);
     border-radius: 14px;
   }
+  .showcase-section,
+  .split-section,
+  .logos-section,
+  .testimonial-section {
+    width: 90%;
+  }
+  .showcase-section,
+  .split-section,
+  .testimonial-section {
+    padding-top: 72px;
+    padding-bottom: 80px;
+  }
+  .split-section {
+    grid-template-columns: 1fr;
+    gap: 42px;
+  }
+  .split-section.reverse .split-copy,
+  .split-section.reverse .split-visual {
+    order: initial;
+  }
+  .testimonial-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero.layout-center {
+    min-height: 620px;
+  }
+
   .hero { min-height: auto; }
   .hero h1 { font-size: clamp(38px, 12vw, 58px); }
   .hero-description { font-size: 17px; }

@@ -15,17 +15,19 @@ function stopPreviewServer() {
         console.log(`🛑 Stopping preview process tree (PID ${pid})...`);
 
         if (process.platform === "win32") {
-            execFile("taskkill", ["/pid", String(pid), "/T", "/F"], () => {
-                previewProcess = null;
-                previewUrl = null;
-                resolve();
-            });
+            execFile(
+                "taskkill",
+                ["/pid", String(pid), "/T", "/F"],
+                () => {
+                    previewProcess = null;
+                    previewUrl = null;
+                    resolve();
+                }
+            );
         } else {
             previewProcess.kill("SIGTERM");
-
             previewProcess = null;
             previewUrl = null;
-
             resolve();
         }
     });
@@ -34,7 +36,6 @@ function stopPreviewServer() {
 function extractPreviewUrl(output) {
     const cleanOutput = output.replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, "");
     const match = cleanOutput.match(/Local:\s+(https?:\/\/localhost:\d+\/?)/i);
-
     return match ? match[1] : null;
 }
 
@@ -44,7 +45,6 @@ async function waitForPreviewReady(url, timeoutMs = 15000) {
     while (Date.now() - start < timeoutMs) {
         try {
             const response = await fetch(url);
-
             if (response.ok || response.status < 500) {
                 return;
             }
@@ -62,9 +62,6 @@ async function waitForPreviewReady(url, timeoutMs = 15000) {
 
 function createPreviewProcess(generatedDir) {
     if (process.platform === "win32") {
-        // Use cmd.exe explicitly on Windows. This avoids npm.cmd + shell=true
-        // spawn issues such as EINVAL and gives us a process tree that
-        // taskkill /T can reliably clean up.
         return spawn(
             process.env.ComSpec || "cmd.exe",
             ["/d", "/s", "/c", "npm run preview -- --port 4173"],
@@ -92,16 +89,15 @@ export async function startPreviewServer(generatedDir) {
     console.log("🚀 Starting preview server...");
 
     return new Promise((resolve, reject) => {
+        let settled = false;
+        let outputBuffer = "";
+
         try {
             previewProcess = createPreviewProcess(generatedDir);
         } catch (error) {
-            previewProcess = null;
-            reject(error);
+            fail(error);
             return;
         }
-
-        let settled = false;
-        let outputBuffer = "";
 
         const fail = (error) => {
             if (settled) return;
@@ -109,15 +105,12 @@ export async function startPreviewServer(generatedDir) {
             settled = true;
             previewProcess = null;
             previewUrl = null;
-
             reject(error);
         };
 
         const handleOutput = (data) => {
             const output = data.toString();
-
             outputBuffer += output;
-
             console.log("Preview:", output.trim());
 
             const detectedUrl = extractPreviewUrl(outputBuffer);
@@ -133,12 +126,7 @@ export async function startPreviewServer(generatedDir) {
                     if (settled) return;
 
                     settled = true;
-
-                    console.log(
-                        "✅ Preview server is ready:",
-                        previewUrl
-                    );
-
+                    console.log("✅ Preview server is ready:", previewUrl);
                     resolve(previewUrl);
                 })
                 .catch(fail);
@@ -148,14 +136,9 @@ export async function startPreviewServer(generatedDir) {
 
         previewProcess.stderr.on("data", (data) => {
             const output = data.toString().trim();
-
             if (output) {
                 console.error("Preview Error:", output);
             }
-
-            // Vite can write normal startup information to stderr.
-            // Do not fail here; readiness is determined by the Local URL
-            // and an HTTP request to that URL.
         });
 
         previewProcess.on("error", fail);
