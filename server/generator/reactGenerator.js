@@ -594,6 +594,91 @@ function createAppComponent(reactSpec, websiteSpec) {
       }
 
       /*
+       * LARGE PRODUCT SHOWCASE
+       */
+      if (type === "showcase") {
+        const imageUrl = resolveImageUrl(section.image, websiteSpec);
+
+        return `
+          <section id="${sectionId}" className="showcase-section layout-${section.layout || "center"}">
+            <div className="showcase-copy">
+              ${section.title ? `<h2>${escapeHtml(section.title)}</h2>` : ""}
+              ${section.description ? `<p>${escapeHtml(section.description)}</p>` : ""}
+              <div className="showcase-actions">${renderButtons(section.buttons)}</div>
+            </div>
+
+            ${imageUrl ? `
+              <div className="showcase-visual">
+                <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(section.title || "Product preview")}" />
+              </div>
+            ` : ""}
+          </section>
+        `;
+      }
+
+      /*
+       * TEXT + VISUAL SPLIT
+       */
+      if (type === "split") {
+        const imageUrl = resolveImageUrl(section.image, websiteSpec);
+        const reverse = section.layout === "split-right";
+
+        return `
+          <section id="${sectionId}" className="split-section ${reverse ? "reverse" : ""}">
+            <div className="split-copy">
+              ${section.title ? `<h2>${escapeHtml(section.title)}</h2>` : ""}
+              ${section.description ? `<p>${escapeHtml(section.description)}</p>` : ""}
+              <div className="split-actions">${renderButtons(section.buttons)}</div>
+            </div>
+
+            ${imageUrl ? `
+              <div className="split-visual">
+                <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(section.title || "Section visual")}" />
+              </div>
+            ` : ""}
+          </section>
+        `;
+      }
+
+      /*
+       * LOGO / BRAND CLOUD
+       */
+      if (type === "logos") {
+        return `
+          <section id="${sectionId}" className="logos-section">
+            ${section.title ? `<p className="logos-eyebrow">${escapeHtml(section.title)}</p>` : ""}
+            <div className="logo-row">
+              ${(section.items || []).map((item) => {
+                const imageUrl = resolveImageUrl(item.image, websiteSpec);
+                return imageUrl
+                  ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(item.title || "Logo")}" />`
+                  : `<span>${escapeHtml(item.title || "")}</span>`;
+              }).join("")}
+            </div>
+          </section>
+        `;
+      }
+
+      /*
+       * TESTIMONIALS
+       */
+      if (type === "testimonial") {
+        return `
+          <section id="${sectionId}" className="testimonial-section">
+            ${section.title ? `<h2>${escapeHtml(section.title)}</h2>` : ""}
+            <div className="testimonial-grid">
+              ${(section.items || []).map((item) => `
+                <article className="testimonial-card">
+                  <p className="testimonial-quote">“${escapeHtml(item.description || item.title || "")}”</p>
+                  ${item.title ? `<div className="testimonial-author">${escapeHtml(item.title)}</div>` : ""}
+                </article>
+              `).join("")}
+            </div>
+          </section>
+        `;
+      }
+
+      /*
        * SEARCH / FILTER BAR
        */
       if (type === "search") {
@@ -1155,6 +1240,179 @@ img { max-width: 100%; display: block; }
   object-fit: contain;
 }
 
+/* Visual reconstruction components */
+.hero.layout-center {
+  flex-direction: column;
+  text-align: center;
+  gap: clamp(44px, 6vw, 88px);
+  min-height: var(--hero-min-height, 680px);
+}
+.hero.layout-center .hero-content {
+  max-width: min(900px, 92vw);
+}
+.hero.layout-center .hero-description {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 720px;
+}
+.hero.layout-center .hero-actions {
+  justify-content: center;
+}
+.hero.layout-center .hero-image {
+  width: min(var(--hero-image-width, 1120px), 92vw);
+  max-width: none;
+  margin-top: 8px;
+}
+.hero.layout-center .hero-image img {
+  width: 100%;
+  max-height: none;
+  object-fit: contain;
+  border-radius: 18px;
+  box-shadow: 0 30px 100px rgba(0,0,0,.22);
+}
+
+.showcase-section,
+.split-section,
+.logos-section,
+.testimonial-section {
+  width: min(var(--max-width), 92vw);
+  margin: 0 auto;
+}
+
+.showcase-section {
+  padding: 110px 0 130px;
+  text-align: center;
+}
+.showcase-copy {
+  max-width: 780px;
+  margin: 0 auto 58px;
+}
+.showcase-copy h2,
+.split-copy h2,
+.testimonial-section h2 {
+  margin: 0 0 18px;
+  font-size: clamp(34px, 5vw, 62px);
+  line-height: 1.02;
+  letter-spacing: -.04em;
+}
+.showcase-copy p,
+.split-copy p {
+  margin: 0 auto;
+  max-width: 680px;
+  font-size: 18px;
+  line-height: 1.65;
+  opacity: .72;
+}
+.showcase-actions,
+.split-actions {
+  margin-top: 28px;
+}
+.showcase-visual {
+  width: min(1180px, 94vw);
+  margin: 0 auto;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(127,127,127,.18);
+  box-shadow: 0 40px 120px rgba(0,0,0,.28);
+  background: rgba(127,127,127,.06);
+}
+.showcase-visual img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.split-section {
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+  align-items: center;
+  gap: clamp(48px, 7vw, 110px);
+  padding: 120px 0;
+}
+.split-section.reverse .split-copy { order: 2; }
+.split-section.reverse .split-visual { order: 1; }
+.split-copy h2 {
+  font-size: clamp(34px, 4.6vw, 58px);
+}
+.split-visual {
+  min-width: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(127,127,127,.18);
+  box-shadow: 0 28px 90px rgba(0,0,0,.2);
+}
+.split-visual img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.logos-section {
+  padding: 80px 0;
+  text-align: center;
+}
+.logos-eyebrow {
+  margin: 0 0 34px;
+  font-size: 14px;
+  opacity: .62;
+  letter-spacing: .04em;
+}
+.logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(28px, 5vw, 70px);
+}
+.logo-row img {
+  width: auto;
+  max-width: 150px;
+  max-height: 42px;
+  object-fit: contain;
+  filter: grayscale(1);
+  opacity: .72;
+}
+.logo-row span {
+  font-size: 18px;
+  font-weight: 600;
+  opacity: .72;
+}
+
+.testimonial-section {
+  padding: 120px 0;
+}
+.testimonial-section h2 {
+  text-align: center;
+  margin-bottom: 52px;
+}
+.testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.testimonial-card {
+  min-height: 260px;
+  padding: 32px;
+  border: 1px solid rgba(127,127,127,.16);
+  border-radius: 20px;
+  background: rgba(127,127,127,.045);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.testimonial-quote {
+  margin: 0;
+  font-size: clamp(18px, 2vw, 25px);
+  line-height: 1.4;
+  letter-spacing: -.015em;
+}
+.testimonial-author {
+  margin-top: 28px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: .68;
+}
+
 /* Buttons */
 .primary-btn, .secondary-btn {
   display: inline-flex;
@@ -1304,6 +1562,33 @@ img { max-width: 100%; display: block; }
     width: calc(100% - 14px);
     border-radius: 14px;
   }
+  .showcase-section,
+  .split-section,
+  .logos-section,
+  .testimonial-section {
+    width: 90%;
+  }
+  .showcase-section,
+  .split-section,
+  .testimonial-section {
+    padding-top: 72px;
+    padding-bottom: 80px;
+  }
+  .split-section {
+    grid-template-columns: 1fr;
+    gap: 42px;
+  }
+  .split-section.reverse .split-copy,
+  .split-section.reverse .split-visual {
+    order: initial;
+  }
+  .testimonial-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero.layout-center {
+    min-height: 620px;
+  }
+
   .hero { min-height: auto; }
   .hero h1 { font-size: clamp(38px, 12vw, 58px); }
   .hero-description { font-size: 17px; }
