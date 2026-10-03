@@ -6,6 +6,7 @@ export function buildWebsiteSpec({
     styles,
     assets,
     screenshot,
+    visualScreenshot,
     responsive,
     visualAnalysis
 }) {
@@ -40,6 +41,7 @@ export function buildWebsiteSpec({
         },
 
         screenshot,
+        visualScreenshot,
 
         responsive,
         visualAnalysis: visualAnalysis || null
