@@ -81,6 +81,8 @@ const aiInput = {
             : null
     },
 
+    visualAnalysis: websiteSpec.visualAnalysis || null,
+
     responsive: {
         desktop: {
             width: websiteSpec.responsive.desktop.viewport.width,
@@ -128,11 +130,12 @@ Use exactly this structure:
 Rules:
 
 1. Identify the major visual sections of the page.
-2. Identify reusable UI components.
-3. Infer the page type from the provided information.
-4. Use headings, buttons, links, text blocks, controls, sections and images as evidence.
-5. Treat repeated text blocks as possible cards, lists, categories, filters or navigation content.
-6. Do not invent unnecessary components.
+2. Give priority to the visualAnalysis blueprint when it conflicts with weak DOM heuristics.
+3. Identify reusable UI components.
+4. Infer the page type from the provided information.
+5. Use headings, buttons, links, text blocks, controls, sections and images as evidence.
+6. Treat repeated text blocks as possible cards, lists, categories, filters or navigation content.
+7. Do not invent unnecessary components.
 7. Do not reproduce every HTML element.
 8. Keep the component list concise.
 9. Return valid JSON only.
