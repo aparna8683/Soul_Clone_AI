@@ -28,11 +28,11 @@ const aiInput = {
         .filter(Boolean),
 
     textBlocks: websiteSpec.content.textBlocks
-        ? websiteSpec.content.textBlocks.slice(0, 40)
+        ? websiteSpec.content.textBlocks.slice(0, 12)
         : [],
 
     controls: websiteSpec.content.controls
-        ? websiteSpec.content.controls.slice(0, 12)
+        ? websiteSpec.content.controls.slice(0, 8)
         : [],
 
     landmarks: (websiteSpec.structure.landmarks || [])
@@ -46,7 +46,7 @@ const aiInput = {
         })),
 
     sections: websiteSpec.structure.sections
-        .slice(0, 14)
+.slice(0, 10)
         .map((section) => ({
             tag: section.tag,
             heading: section.heading || null,
@@ -65,7 +65,7 @@ const aiInput = {
         })),
 
     visualBlocks: (websiteSpec.structure.visualBlocks || [])
-        .slice(0, 20)
+.slice(0, 12)
         .map((block) => ({
             tag: block.tag,
             className: block.className,
@@ -78,7 +78,7 @@ const aiInput = {
         })),
 
     images: websiteSpec.assets.images
-         .slice(0, 20)
+ .slice(0, 12)
         .map((image) => ({
             alt: image.alt,
             width: image.width,
@@ -184,7 +184,11 @@ ${JSON.stringify(aiInput)}
         "characters"
     );
 
-    const response = await runAI(prompt);
+    const response = await runAI(prompt, {
+        temperature: 0.2,
+        max_completion_tokens: 900,
+        response_format: { type: "json_object" }
+    });
 
     return JSON.parse(response);
 }
