@@ -547,6 +547,10 @@ function createAppComponent(reactSpec, websiteSpec) {
           <section
             id="${sectionId}"
             className="hero layout-${section.layout || "default"} ${section.background ? "has-bg" : ""}"
+            style={{
+              "--hero-min-height": "${Number(section.visual?.minHeight || 680)}px",
+              "--hero-image-width": "${Number(section.visual?.imageWidth || 1120)}px"
+            }}
           >
             <div className="hero-content">
 
