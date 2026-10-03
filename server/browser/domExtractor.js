@@ -5,6 +5,18 @@ export async function extractDOM(page) {
             return element?.textContent?.trim() || null;
         };
 
+        const isVisible = (element) => {
+            const styles = window.getComputedStyle(element);
+            const rect = element.getBoundingClientRect();
+            return (
+                styles.display !== "none" &&
+                styles.visibility !== "hidden" &&
+                parseFloat(styles.opacity) !== 0 &&
+                rect.width > 0 &&
+                rect.height > 0
+            );
+        };
+
         const headings = Array.from(
             document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         ).map((element) => ({
