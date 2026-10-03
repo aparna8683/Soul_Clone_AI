@@ -13,6 +13,8 @@ import {
 } from "../generator/reactGenerator.js";
 import { validateAndRepairBuild } from "../generator/buildValidator.js";
 import { startPreviewServer } from "../preview/previewServer.js";
+import { captureGeneratedScreenshot } from "../preview/previewScreenshot.js";
+import { critiqueGeneratedWebsite } from "../ai/visualCritic.js";
 
 const router = express.Router();
 
@@ -57,9 +59,26 @@ router.post("/", async (req, res) => {
         const buildResult = await validateAndRepairBuild(generatedDir, 2);
 
         let previewUrl = null;
+        let generatedScreenshot = null;
+        let visualCritique = null;
+
         if (buildResult.success) {
             previewUrl = await startPreviewServer(generatedDir);
             console.log("👀 Preview available at:", previewUrl);
+
+            try {
+                generatedScreenshot = await captureGeneratedScreenshot(previewUrl);
+                console.log("📸 Generated screenshot captured");
+
+                visualCritique = await critiqueGeneratedWebsite(
+                    websiteSpec.screenshot,
+                    generatedScreenshot
+                );
+
+                console.log("🔎 Visual QA completed");
+            } catch (visualError) {
+                console.warn("⚠️ Visual QA skipped:", visualError.message);
+            }
         }
 
         res.json({
@@ -68,7 +87,9 @@ router.post("/", async (req, res) => {
             reactSpec,
             appCode,
             buildResult,
-            previewUrl
+            previewUrl,
+            generatedScreenshot,
+            visualCritique
         });
 
     } catch (error) {
