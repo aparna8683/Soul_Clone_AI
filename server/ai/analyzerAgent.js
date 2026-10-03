@@ -35,6 +35,16 @@ const aiInput = {
         ? websiteSpec.content.controls.slice(0, 12)
         : [],
 
+    landmarks: (websiteSpec.structure.landmarks || [])
+        .slice(0, 8)
+        .map((landmark) => ({
+            tag: landmark.tag,
+            className: landmark.className,
+            width: landmark.size?.width,
+            height: landmark.size?.height,
+            y: landmark.position?.y
+        })),
+
     sections: websiteSpec.structure.sections
         .slice(0, 12)
         .map((section) => ({
