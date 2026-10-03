@@ -27,6 +27,14 @@ const aiInput = {
         .map((link) => link.text)
         .filter(Boolean),
 
+    textBlocks: websiteSpec.content.textBlocks
+        ? websiteSpec.content.textBlocks.slice(0, 40)
+        : [],
+
+    controls: websiteSpec.content.controls
+        ? websiteSpec.content.controls.slice(0, 12)
+        : [],
+
     sections: websiteSpec.structure.sections
         .slice(0, 12)
         .map((section) => ({
@@ -122,11 +130,12 @@ Rules:
 1. Identify the major visual sections of the page.
 2. Identify reusable UI components.
 3. Infer the page type from the provided information.
-4. Use the headings, buttons, links, sections and images as evidence.
-5. Do not invent unnecessary components.
-6. Do not reproduce every HTML element.
-7. Keep the component list concise.
-8. Return valid JSON only.
+4. Use headings, buttons, links, text blocks, controls, sections and images as evidence.
+5. Treat repeated text blocks as possible cards, lists, categories, filters or navigation content.
+6. Do not invent unnecessary components.
+7. Do not reproduce every HTML element.
+8. Keep the component list concise.
+9. Return valid JSON only.
 
 Website information:
 
