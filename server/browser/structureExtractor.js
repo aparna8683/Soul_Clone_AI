@@ -1,10 +1,8 @@
 export async function extractStructure(page) {
     const structure = await page.evaluate(() => {
-
         const isVisible = (element) => {
             const styles = window.getComputedStyle(element);
             const rect = element.getBoundingClientRect();
-
             return (
                 styles.display !== "none" &&
                 styles.visibility !== "hidden" &&
@@ -14,9 +12,15 @@ export async function extractStructure(page) {
             );
         };
 
+        const cleanText = (value = "") => value.replace(/\\s+/g, " ").trim();
+
         const getInfo = (element, headingText = null) => {
             const rect = element.getBoundingClientRect();
             const styles = window.getComputedStyle(element);
+
+            const gridColumns = styles.gridTemplateColumns
+                ? styles.gridTemplateColumns.split(" ").length
+                : null;
 
             return {
                 tag: element.tagName.toLowerCase(),
@@ -25,33 +29,50 @@ export async function extractStructure(page) {
                     typeof element.className === "string"
                         ? element.className
                         : null,
-
                 heading: headingText,
-
                 position: {
                     x: Math.round(rect.x),
                     y: Math.round(rect.y)
                 },
-
                 size: {
                     width: Math.round(rect.width),
                     height: Math.round(rect.height)
                 },
-
                 backgroundColor: styles.backgroundColor,
+                backgroundImage: styles.backgroundImage !== "none"
+                    ? styles.backgroundImage
+                    : null,
                 display: styles.display,
-                positionType: styles.position
+                positionType: styles.position,
+                flexDirection: styles.flexDirection,
+                gridColumns,
+                borderRadius: styles.borderRadius,
+                padding: styles.padding,
+                gap: styles.gap
             };
         };
 
-        /*
-         * Find the visual container around each H1/H2.
-         *
-         * We move upward through the DOM while the container
-         * still contains only one major heading.
-         *
-         * When another H1/H2 appears, we stop.
-         */
+        const allImages = Array.from(document.querySelectorAll("img"))
+            .filter(isVisible)
+            .map((img, assetIndex) => {
+                const rect = img.getBoundingClientRect();
+                const styles = window.getComputedStyle(img);
+                return {
+                    assetIndex,
+                    src: img.currentSrc || img.src,
+                    alt: img.alt || null,
+                    x: Math.round(rect.x),
+                    y: Math.round(rect.y),
+                    width: Math.round(rect.width),
+                    height: Math.round(rect.height),
+                    naturalWidth: img.naturalWidth || null,
+                    naturalHeight: img.naturalHeight || null,
+                    area: Math.round(rect.width * rect.height),
+                    objectFit: styles.objectFit,
+                    visible: rect.width > 20 && rect.height > 20
+                };
+            });
+
         const headingElements = Array.from(
             document.querySelectorAll("h1, h2")
         ).filter(isVisible);
@@ -59,7 +80,6 @@ export async function extractStructure(page) {
         const candidates = [];
 
         for (const heading of headingElements) {
-
             let candidate = heading.parentElement;
 
             while (
@@ -67,14 +87,8 @@ export async function extractStructure(page) {
                 candidate !== document.body &&
                 candidate !== document.documentElement
             ) {
+                const majorHeadings = candidate.querySelectorAll("h1, h2");
 
-                const majorHeadings =
-                    candidate.querySelectorAll("h1, h2");
-
-                /*
-                 * If this container contains another major heading,
-                 * it is probably a parent containing multiple sections.
-                 */
                 if (majorHeadings.length > 1) {
                     break;
                 }
@@ -87,50 +101,73 @@ export async function extractStructure(page) {
             }
 
             if (candidate && candidate !== document.body) {
-                const headingText =
-                    heading.textContent?.trim().slice(0, 200) || null;
-
                 candidates.push({
                     element: candidate,
-                    headingText
+                    headingText: cleanText(heading.textContent).slice(0, 200) || null
                 });
             }
         }
 
-        /*
-         * Remove duplicate containers.
-         */
         const uniqueCandidates = [];
-
         for (const candidate of candidates) {
-            const alreadyExists = uniqueCandidates.some(
-                (item) => item.element === candidate.element
-            );
-
-            if (!alreadyExists) {
+            if (!uniqueCandidates.some((item) => item.element === candidate.element)) {
                 uniqueCandidates.push(candidate);
             }
         }
 
-        /*
-         * Convert containers into useful section information.
-         */
+        const viewportWidth = window.innerWidth;
+        const documentHeight = document.documentElement.scrollHeight;
+
         const sections = uniqueCandidates
-            .map((candidate) =>
-                getInfo(candidate.element, candidate.headingText)
-            )
+            .map((candidate) => {
+                const info = getInfo(candidate.element, candidate.headingText);
+                const rect = candidate.element.getBoundingClientRect();
+
+                const media = allImages
+                    .map((image) => {
+                        const centerX = image.x + image.width / 2;
+                        const centerY = image.y + image.height / 2;
+                        const inside =
+                            centerX >= rect.x &&
+                            centerX <= rect.right &&
+                            centerY >= rect.y &&
+                            centerY <= rect.bottom;
+
+                        const distance = Math.abs(
+                            centerY - (rect.y + rect.height / 2)
+                        );
+
+                        return { ...image, inside, distance };
+                    })
+                    .filter((image) => image.inside && image.width > 40 && image.height > 40)
+                    .sort((a, b) => b.area - a.area)
+                    .slice(0, 6)
+                    .map((image) => ({
+                        assetIndex: image.assetIndex,
+                        alt: image.alt,
+                        x: image.x,
+                        y: image.y,
+                        width: image.width,
+                        height: image.height,
+                        naturalWidth: image.naturalWidth,
+                        naturalHeight: image.naturalHeight,
+                        area: image.area,
+                        role:
+                            image.width > 700 || image.height > 450
+                                ? "large-visual"
+                                : image.width > 300
+                                    ? "content-image"
+                                    : "small-image"
+                    }));
+
+                return {
+                    ...info,
+                    media
+                };
+            })
             .filter((section) => {
-
-                const viewportWidth = window.innerWidth;
-                const documentHeight =
-                    document.documentElement.scrollHeight;
-
-                const isTooLarge =
-                    section.size.height > documentHeight * 0.8;
-
-                const isTooSmall =
-                    section.size.height < 80;
-
+                const isTooLarge = section.size.height > documentHeight * 0.8;
+                const isTooSmall = section.size.height < 80;
                 const isPageWrapper =
                     section.id === "__next" ||
                     section.tag === "body" ||
@@ -144,20 +181,24 @@ export async function extractStructure(page) {
                 );
             });
 
-        /*
-         * Extract important page landmarks separately.
-         */
         const landmarks = Array.from(
-            document.querySelectorAll(
-                "header, nav, footer, aside"
-            )
+            document.querySelectorAll("header, nav, footer, aside")
         )
             .filter(isVisible)
             .map((element) => getInfo(element));
 
+        const visualBlocks = Array.from(
+            document.querySelectorAll("main > *, [role='main'] > *")
+        )
+            .filter(isVisible)
+            .map((element) => getInfo(element))
+            .filter((block) => block.size.width >= viewportWidth * 0.65 && block.size.height >= 120)
+            .slice(0, 30);
+
         return {
             sections,
-            landmarks
+            landmarks,
+            visualBlocks
         };
     });
 
