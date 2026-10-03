@@ -1080,3 +1080,60 @@ img { max-width: 100%; display: block; }
     await writeGeneratedFile("src/styles.css", styles);
     return styles;
 }
+
+
+// ============================================================
+// 7. Generate index.html
+// ============================================================
+
+export async function generateIndexFile(websiteSpec = {}) {
+    const title = websiteSpec?.metadata?.title || "Generated Website";
+
+    const indexCode = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(title)}</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+`;
+
+    await writeGeneratedFile("index.html", indexCode);
+    return indexCode;
+}
+
+
+// ============================================================
+// 8. Generate package.json
+// ============================================================
+
+export async function generatePackageFile() {
+    const packageCode = `{
+  "name": "soulclone-generated-site",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.4",
+    "vite": "^7.1.7"
+  }
+}
+`;
+
+    await writeGeneratedFile("package.json", packageCode);
+    return packageCode;
+}
