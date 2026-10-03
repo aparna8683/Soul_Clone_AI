@@ -48,7 +48,15 @@ export async function generateReactSpec(
             buttons: websiteSpec.content.buttons
                 .slice(0, 12)
                 .filter((button) => button.text)
-                .map((button) => ({ text: button.text, url: button.url }))
+                .map((button) => ({ text: button.text, url: button.url })),
+
+            textBlocks: websiteSpec.content.textBlocks
+                ? websiteSpec.content.textBlocks.slice(0, 40)
+                : [],
+
+            controls: websiteSpec.content.controls
+                ? websiteSpec.content.controls.slice(0, 10)
+                : []
         },
 
         design: {
@@ -130,11 +138,11 @@ Rules:
 11. Preserve the original visual hierarchy and section order.
 12. Use layout based on the supplied structure evidence.
 13. Use navItems for navigation links instead of placing them in items.
-14. For images, return the supplied asset ID such as "assets/img-0".
-15. Prefer faithful reconstruction over generic UI patterns.
-16. Do not invent images when no suitable asset exists.
-17. Preserve the original section order.
-18. Use the original text whenever it is available.
+15. For images, return the supplied asset ID such as "assets/img-0".
+16. Prefer faithful reconstruction over generic UI patterns.
+17. Do not invent images when no suitable asset exists.
+18. Preserve the original section order.
+19. Use the original text whenever it is available.
 
 Website evidence:
 
