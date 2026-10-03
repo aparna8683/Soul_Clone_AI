@@ -53,7 +53,6 @@ export async function extractStructure(page) {
         };
 
         const allImages = Array.from(document.querySelectorAll("img"))
-            .filter(isVisible)
             .map((img, assetIndex) => {
                 const rect = img.getBoundingClientRect();
                 const styles = window.getComputedStyle(img);
@@ -69,9 +68,10 @@ export async function extractStructure(page) {
                     naturalHeight: img.naturalHeight || null,
                     area: Math.round(rect.width * rect.height),
                     objectFit: styles.objectFit,
-                    visible: rect.width > 20 && rect.height > 20
+                    visible: isVisible(img) && rect.width > 20 && rect.height > 20
                 };
-            });
+            })
+            .filter((image) => image.visible);
 
         const headingElements = Array.from(
             document.querySelectorAll("h1, h2")
