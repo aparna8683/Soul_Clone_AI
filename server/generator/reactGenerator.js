@@ -19,6 +19,16 @@ export async function generateReactSpec(
         componentPlan,
 
         // Keep structure compact to control AI token usage.
+        landmarks: (websiteSpec.structure.landmarks || [])
+            .slice(0, 8)
+            .map((landmark) => ({
+                tag: landmark.tag,
+                className: landmark.className,
+                y: landmark.position?.y,
+                width: landmark.size?.width,
+                height: landmark.size?.height
+            })),
+
         structure: websiteSpec.structure.sections
             .slice(0, 10)
             .map((section) => ({
