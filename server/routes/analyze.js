@@ -91,14 +91,14 @@ router.post("/", async (req, res) => {
             }
         }
 
+        // Keep the HTTP response small. WebsiteSpec contains screenshot/base64
+        // evidence that is intentionally kept on the server for later modification
+        // and should not be sent back to the browser.
         res.json({
-            websiteSpec,
             componentPlan,
             reactSpec,
-            appCode,
             buildResult,
             previewUrl,
-            generatedScreenshot,
             visualCritique
         });
 
