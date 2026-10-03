@@ -1,28 +1,6 @@
-import fs from "fs/promises";
-import Groq from "groq-sdk";
-
-const client = new Groq({
-    apiKey: process.env.GROQ_API_KEY
-});
-
-const VISION_MODEL = "qwen/qwen3.8-27b";
-
-function imageToDataUrl(imagePath) {
-    return fs.readFile(imagePath)
-        .then((buffer) => {
-            const base64 = buffer.toString("base64");
-            const extension = imagePath.toLowerCase().endsWith(".jpg") ||
-                imagePath.toLowerCase().endsWith(".jpeg")
-                ? "jpeg"
-                : "png";
-
-            return `data:image/${extension};base64,${base64}`;
-        });
-}
+import { runVisionAI } from "./groq.js";
 
 export async function analyzeScreenshot(imagePath) {
-    const imageUrl = await imageToDataUrl(imagePath);
-
     const prompt = `
 You are a visual UI reconstruction analyst.
 
@@ -81,45 +59,30 @@ Rules:
 7. Keep visibleText short and useful.
 8. Do not generate React or CSS.
 9. Return JSON only.
+10. Pay special attention to the size and placement of product screenshots, mockups, illustrations and large empty space.
 `;
 
-    console.log("👁️ Sending screenshot to vision model (max 700 output tokens)...");
+    console.log("👁️ Running visual analysis with Groq vision...");
 
-    const response = await client.chat.completions.create({
-        model: VISION_MODEL,
-        messages: [
-            {
-                role: "user",
-                content: [
-                    {
-                        type: "text",
-                        text: prompt
-                    },
-                    {
-                        type: "image_url",
-                        image_url: {
-                            url: imageUrl
-                        }
-                    }
-                ]
-            }
-        ],
-        temperature: 0.2,
-        max_completion_tokens: 700,
-        response_format: {
-            type: "json_object"
+    const response = await runVisionAI(
+        prompt,
+        [imagePath],
+        {
+            temperature: 0.2,
+            max_completion_tokens: 700,
+            response_format: {
+                type: "json_object"
+            },
+            reasoning_effort: "none",
+            timeout: 45000
         }
-    }, {
-        timeout: 45000
-    });
+    );
 
-    const content = response?.choices?.[0]?.message?.content?.trim();
-
-    if (!content) {
+    if (!response) {
         throw new Error("Vision model returned an empty response.");
     }
 
     console.log("👁️ Visual analysis received");
 
-    return JSON.parse(content);
+    return JSON.parse(response);
 }
