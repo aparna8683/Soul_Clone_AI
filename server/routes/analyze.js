@@ -16,6 +16,7 @@ import { startPreviewServer } from "../preview/previewServer.js";
 import { captureGeneratedScreenshot } from "../preview/previewScreenshot.js";
 import { critiqueGeneratedWebsite } from "../ai/visualCritic.js";
 import { downloadAssets } from "../browser/assetDownloader.js";
+import { setLatestWebsiteSpec } from "../state.js";
 
 const router = express.Router();
 
@@ -33,6 +34,10 @@ router.post("/", async (req, res) => {
 
         const websiteSpec = await analyzeWebsite(url);
         console.log("✅ WebsiteSpec created");
+
+        // Keep the source specification on the backend so modification
+        // requests do not have to upload large screenshot/base64 payloads.
+        setLatestWebsiteSpec(websiteSpec);
 
         const componentPlan = await analyzeWebsiteWithAI(websiteSpec);
         console.log("🤖 Component plan created");
@@ -59,7 +64,7 @@ router.post("/", async (req, res) => {
 
         const packageCode = await generatePackageFile();
         console.log("📦 package.json generated");
-        
+
         console.log("\n🧪 Running build validation...");
         const buildResult = await validateAndRepairBuild(generatedDir, 2);
 
@@ -101,7 +106,8 @@ router.post("/", async (req, res) => {
         console.error("Website analysis failed:", error);
 
         res.status(500).json({
-            error: "Failed to analyze website"
+            error: "Failed to analyze website",
+            details: error.message
         });
     }
 });
