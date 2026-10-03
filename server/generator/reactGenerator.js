@@ -20,7 +20,7 @@ export async function generateReactSpec(
 
         // Keep structure compact to control AI token usage.
         landmarks: (websiteSpec.structure.landmarks || [])
-            .slice(0, 8)
+            .slice(0, 6)
             .map((landmark) => ({
                 tag: landmark.tag,
                 className: landmark.className,
@@ -30,7 +30,7 @@ export async function generateReactSpec(
             })),
 
         structure: websiteSpec.structure.sections
-            .slice(0, 14)
+            .slice(0, 10)
             .map((section) => ({
                 tag: section.tag,
                 heading: section.heading,
@@ -62,26 +62,26 @@ export async function generateReactSpec(
 
         content: {
             headings: websiteSpec.content.headings
-                .slice(0, 15)
+                .slice(0, 10)
                 .map((heading) => ({
                     tag: heading.tag,
                     text: heading.text
                 })),
 
             paragraphs: websiteSpec.content.paragraphs
-                .slice(0, 12),
+                .slice(0, 6),
 
             buttons: websiteSpec.content.buttons
-                .slice(0, 12)
+                .slice(0, 6)
                 .filter((button) => button.text)
                 .map((button) => ({ text: button.text, url: button.url })),
 
             textBlocks: websiteSpec.content.textBlocks
-                ? websiteSpec.content.textBlocks.slice(0, 40)
+                ? websiteSpec.content.textBlocks.slice(0, 12)
                 : [],
 
             controls: websiteSpec.content.controls
-                ? websiteSpec.content.controls.slice(0, 10)
+                ? websiteSpec.content.controls.slice(0, 6)
                 : []
         },
 
@@ -99,17 +99,17 @@ export async function generateReactSpec(
         // Do NOT send huge image URLs to the AI.
         // Give each image a compact ID instead.
         assets: websiteSpec.assets.images
-            .slice(0, 20)
+            .slice(0, 12)
             .map((image, index) => ({
                 id: `img-${index}`,
-                src: image.src,
+                src: image.src ? "[source]" : "",
                 alt: image.alt,
                 width: image.width,
                 height: image.height,
                 aspectRatio: image.aspectRatio,
                 semanticRole: image.semanticRole,
                 alt: image.alt,
-                parentText: image.parentText,
+                parentText: image.parentText?.slice(0, 80),
                 local: Boolean(image.local)
             }))
     };
@@ -206,7 +206,11 @@ ${JSON.stringify(input)}
         "characters"
     );
 
-    const response = await runAI(prompt);
+    const response = await runAI(prompt, {
+        temperature: 0.2,
+        max_completion_tokens: 1400,
+        response_format: { type: "json_object" }
+    });
 
     const parsed = JSON.parse(response);
     return enrichReactSpec(parsed, websiteSpec);
