@@ -28,7 +28,7 @@ export async function captureGeneratedScreenshot(previewUrl) {
 
         await page.screenshot({
             path: screenshotPath,
-            fullPage: true
+            fullPage: false
         });
 
         return screenshotPath;
