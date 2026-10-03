@@ -11,3 +11,6 @@ dist/
 scratch/
 
 screenshots/*.png
+
+screenshots/*.jpg
+server/generated-site/public/assets/
