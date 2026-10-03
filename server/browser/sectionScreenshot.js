@@ -20,8 +20,8 @@ export async function captureSectionEvidence(
 
     for (const section of sections.slice(0, 12)) {
         const index = section.sectionIndex;
-        const heading = section.heading || \`section-\${index + 1}\`;
-        const baseName = \`\${String(index + 1).padStart(2, "0")}-\${safeFileName(heading)}\`;
+        const heading = section.heading || `section-${index + 1}`;
+        const baseName = `${String(index + 1).padStart(2, "0")}-${safeFileName(heading)}`;
 
         try {
             const locator = page.locator(section.selector).first();
@@ -32,7 +32,7 @@ export async function captureSectionEvidence(
 
             const sectionPath = path.join(
                 outputDir,
-                \`\${baseName}.png\`
+                `${baseName}.png`
             );
 
             await locator.screenshot({
@@ -56,7 +56,7 @@ export async function captureSectionEvidence(
 
                     const visualPath = path.join(
                         outputDir,
-                        \`\${baseName}-visual-\${visuals.length + 1}.png\`
+                        `${baseName}-visual-${visuals.length + 1}.png`
                     );
 
                     await visualLocator.screenshot({
@@ -75,7 +75,7 @@ export async function captureSectionEvidence(
                     });
                 } catch (error) {
                     console.warn(
-                        \`⚠️ Could not capture visual for section \${index}:\`,
+                        `⚠️ Could not capture visual for section ${index}:`,
                         error.message
                     );
                 }
@@ -91,14 +91,14 @@ export async function captureSectionEvidence(
             });
         } catch (error) {
             console.warn(
-                \`⚠️ Could not capture section \${index}:\`,
+                `⚠️ Could not capture section ${index}:`,
                 error.message
             );
         }
     }
 
     console.log(
-        \`🧩 Section evidence captured: \${evidence.length}/\${Math.min(sections.length, 12)}\`
+        `🧩 Section evidence captured: ${evidence.length}/${Math.min(sections.length, 12)}`
     );
 
     return evidence;
