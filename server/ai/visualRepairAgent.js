@@ -1,13 +1,18 @@
 import { runAI } from "./groq.js";
 
 function parseJson(raw) {
+    const fence = String.fromCharCode(96).repeat(3);
     const cleaned = String(raw || "")
-        .replace(/^\\uFEFF/, "")
-        .replace(/^\\s*\\x60\\x60\\x60(?:json)?\\s*/i, "")
-        .replace(/\\s*\\x60\\x60\\x60\\s*$/i, "")
+        .replace(/^\uFEFF/, "")
+        .replace(fence + "json", "")
+        .replace(fence, "")
         .trim();
 
     return JSON.parse(cleaned);
+}
+
+function isNumericKey(value) {
+    return new RegExp("^\\d+$").test(value);
 }
 
 function setPath(target, path, value) {
@@ -19,7 +24,7 @@ function setPath(target, path, value) {
     for (let index = 0; index < parts.length - 1; index += 1) {
         const part = parts[index];
 
-        if (/^\\d+$/.test(part)) {
+        if (isNumericKey(part)) {
             const arrayIndex = Number(part);
             if (!Array.isArray(cursor) || !cursor[arrayIndex]) return false;
             cursor = cursor[arrayIndex];
@@ -35,7 +40,7 @@ function setPath(target, path, value) {
 
     const finalPart = parts[parts.length - 1];
 
-    if (Array.isArray(cursor) && /^\\d+$/.test(finalPart)) {
+    if (Array.isArray(cursor) && isNumericKey(finalPart)) {
         cursor[Number(finalPart)] = value;
         return true;
     }
@@ -47,12 +52,28 @@ function setPath(target, path, value) {
 }
 
 function isAllowedPath(path) {
-    return new RegExp(
-        "^(theme\\.(primaryColor|secondaryColor|backgroundColor|textColor|fontFamily))$"
-    ).test(path) ||
-        /^sections\\.\\d+\\.(type|layout|image|imageAspectRatio|columns)$/.test(path) ||
-        /^sections\\.\\d+\\.visual\\.(minHeight|contentWidth|imageWidth|imagePosition|imageOverlap|spacing)$/.test(path) ||
-        /^sections\\.\\d+\\.items\\.\\d+\\.(image|imageAspectRatio)$/.test(path);
+    const themePath = new RegExp(
+        "^theme\\.(primaryColor|secondaryColor|backgroundColor|textColor|fontFamily)$"
+    );
+
+    const sectionPath = new RegExp(
+        "^sections\\.\\d+\\.(type|layout|image|imageAspectRatio|columns)$"
+    );
+
+    const visualPath = new RegExp(
+        "^sections\\.\\d+\\.visual\\.(minHeight|contentWidth|imageWidth|imagePosition|imageOverlap|spacing)$"
+    );
+
+    const itemPath = new RegExp(
+        "^sections\\.\\d+\\.items\\.\\d+\\.(image|imageAspectRatio)$"
+    );
+
+    return (
+        themePath.test(path) ||
+        sectionPath.test(path) ||
+        visualPath.test(path) ||
+        itemPath.test(path)
+    );
 }
 
 export async function repairReactSpecVisually(
@@ -95,8 +116,7 @@ ${JSON.stringify(visualCritique, null, 2)}
 Current ReactSpec:
 ${JSON.stringify(compactSpec, null, 2)}
 
-Return ONLY valid JSON:
-
+Return ONLY valid JSON with this shape:
 {
   "patches": [
     {
@@ -109,7 +129,7 @@ Return ONLY valid JSON:
 
 Rules:
 - Maximum 5 patches.
-- Only use allowed paths listed below.
+- Only use the allowed paths listed below.
 - Do not invent asset IDs. Reuse IDs already present in the spec.
 - Do not remove sections.
 - Do not change text.
@@ -144,6 +164,7 @@ sections.N.items.N.imageAspectRatio
     });
 
     let parsed;
+
     try {
         parsed = parseJson(raw);
     } catch {
