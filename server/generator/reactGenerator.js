@@ -293,7 +293,7 @@ function createAppComponent(reactSpec, websiteSpec) {
             ${
               item.image
                 ? `
-                  <div className={`card-image aspect-${item.imageAspectRatio || "auto"}`}>
+                  <div className="card-image aspect-${item.imageAspectRatio || "auto"}">
                     <img
                       src="${escapeHtml(
                         resolveImageUrl(item.image, websiteSpec)
