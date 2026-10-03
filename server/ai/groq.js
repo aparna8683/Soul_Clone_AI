@@ -46,6 +46,19 @@ export async function runAI(prompt, options = {}) {
             "No response generated."
         );
     } catch (error) {
+        if (error?.status === 429) {
+            const retryAfter = error?.headers?.get?.("retry-after") || "later";
+            const message =
+                "Groq token quota is currently exhausted. " +
+                `Retry after ${retryAfter} seconds or use the next quota window.`;
+
+            console.error("⏳ " + message);
+            const quotaError = new Error(message);
+            quotaError.code = "GROQ_RATE_LIMIT";
+            quotaError.retryAfter = retryAfter;
+            throw quotaError;
+        }
+
         console.error("❌ Groq API error:", error);
         throw error;
     }
