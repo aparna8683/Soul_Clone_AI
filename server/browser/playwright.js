@@ -66,7 +66,16 @@ export async function analyzeWebsite(url) {
         const visualScreenshot = await captureVisualScreenshot(page);
 
         console.log("👁️ Running visual analysis...");
-        const visualAnalysis = await analyzeScreenshot(visualScreenshot);
+        let visualAnalysis = null;
+
+        try {
+            visualAnalysis = await analyzeScreenshot(visualScreenshot);
+        } catch (visualError) {
+            console.warn(
+                "⚠️ Visual analysis unavailable; continuing with DOM/CSS analysis:",
+                visualError.message
+            );
+        }
 
         console.log("📱 Analyzing responsive behavior...");
         const responsive = await analyzeResponsive(page);
