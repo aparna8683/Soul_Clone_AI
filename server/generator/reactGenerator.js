@@ -389,7 +389,7 @@ function createAppComponent(reactSpec, websiteSpec) {
         return `
           <section
             id="${sectionId}"
-            className={`hero layout-${section.layout || "default"} ${section.background ? "has-bg" : ""}`}
+            className="hero layout-${section.layout || "default"} ${section.background ? "has-bg" : ""}"
           >
             <div className="hero-content">
 
@@ -422,7 +422,7 @@ function createAppComponent(reactSpec, websiteSpec) {
             ${
               imageUrl
                 ? `
-                  <div className={`hero-image aspect-${section.imageAspectRatio || "auto"}`}>
+                  <div className="hero-image aspect-${section.imageAspectRatio || "auto"}">
                     <img
                       src="${escapeHtml(imageUrl)}"
                       alt="${escapeHtml(section.title || "Hero image")}"
@@ -443,7 +443,7 @@ function createAppComponent(reactSpec, websiteSpec) {
         return `
           <section
             id="${sectionId}"
-            className={`section stats-section layout-${section.layout || "default"} cols-${section.columns || 4}`}
+            className="section stats-section layout-${section.layout || "default"} cols-${section.columns || 4}"
           >
 
             ${
@@ -503,7 +503,7 @@ function createAppComponent(reactSpec, websiteSpec) {
         return `
           <section
             id="${sectionId}"
-            className={`section features-section layout-${section.layout || "default"} cols-${section.columns || 3}`}
+            className="section features-section layout-${section.layout || "default"} cols-${section.columns || 3}"
           >
 
             ${
@@ -533,7 +533,7 @@ function createAppComponent(reactSpec, websiteSpec) {
         return `
           <section
             id="${sectionId}"
-            className={`section customers layout-${section.layout || "default"} cols-${section.columns || 3}`}
+            className="section customers layout-${section.layout || "default"} cols-${section.columns || 3}"
           >
 
             ${
@@ -563,7 +563,7 @@ function createAppComponent(reactSpec, websiteSpec) {
         return `
           <section
             id="${sectionId}"
-            className={`section resources layout-${section.layout || "default"} cols-${section.columns || 3}`}
+            className="section resources layout-${section.layout || "default"} cols-${section.columns || 3}"
           >
 
             ${
@@ -668,7 +668,7 @@ function createAppComponent(reactSpec, websiteSpec) {
       return `
         <section
           id="${sectionId}"
-          className={`section generic-section layout-${section.layout || "default"}`}
+          className="section generic-section layout-${section.layout || "default"}"
         >
 
           ${
