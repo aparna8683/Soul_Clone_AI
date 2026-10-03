@@ -59,6 +59,8 @@ export async function generateReactSpec(
                 : []
         },
 
+        visualAnalysis: websiteSpec.visualAnalysis || null,
+
         design: {
             body: websiteSpec.design.styles?.body,
             h1: websiteSpec.design.styles?.h1,
@@ -126,10 +128,11 @@ Use exactly this structure:
 Rules:
 
 1. Use the supplied website evidence.
-2. Follow the component plan.
-3. Preserve important visible text.
-4. Identify the major page sections.
-5. Use supplied asset IDs when an image is relevant.
+2. Treat visualAnalysis as first-class evidence for layout and visual hierarchy.
+3. Follow the component plan.
+4. Preserve important visible text.
+5. Identify the major page sections.
+6. Use supplied asset IDs when an image is relevant.
 6. Do not invent large amounts of content.
 7. Keep the structure concise.
 8. Do not reproduce HTML.
