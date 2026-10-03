@@ -69,9 +69,17 @@ export async function extractDOM(page) {
                 className.includes("btn")
             );
         })
-        .map((element) => ({
-            text: getText(element),
-            url: element.href || null
+        .map((element) => {
+            const rect = element.getBoundingClientRect();
+
+            return {
+                text: getText(element),
+                url: element.href || null,
+                x: Math.round(rect.x),
+                y: Math.round(rect.y + window.scrollY),
+                width: Math.round(rect.width),
+                height: Math.round(rect.height)
+            };
         }));
 
         const images = Array.from(
