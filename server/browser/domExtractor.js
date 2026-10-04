@@ -60,10 +60,19 @@ export async function extractDOM(page) {
 
         const links = Array.from(
             document.querySelectorAll("a")
-        ).map((element) => ({
-            text: getText(element),
-            href: element.href
-        }));
+        )
+            .filter(isVisible)
+            .map((element) => {
+                const rect = element.getBoundingClientRect();
+                return {
+                    text: getText(element),
+                    href: element.href,
+                    x: Math.round(rect.x),
+                    y: Math.round(rect.y + window.scrollY),
+                    width: Math.round(rect.width),
+                    height: Math.round(rect.height)
+                };
+            });
 
         const buttons = Array.from(
             document.querySelectorAll("button, a")
