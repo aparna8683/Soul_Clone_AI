@@ -44,19 +44,43 @@ function estimateBackground(data, width, height) {
     };
 }
 
+// Full-page screenshots of the same site can differ in height when the
+// recreation is shorter or taller than the original. Pad the shorter image
+// with its own background color so pixelmatch compares a common canvas and
+// missing/extra content still registers as diff pixels.
+function padToHeight(png, targetHeight) {
+    if (png.height >= targetHeight) {
+        return png;
+    }
+
+    const background = estimateBackground(png.data, png.width, png.height);
+    const padded = new PNG({ width: png.width, height: targetHeight });
+    png.data.copy(padded.data, 0);
+
+    for (
+        let index = png.width * png.height * 4;
+        index < padded.data.length;
+        index += 4
+    ) {
+        padded.data[index] = background.r;
+        padded.data[index + 1] = background.g;
+        padded.data[index + 2] = background.b;
+        padded.data[index + 3] = 255;
+    }
+
+    return padded;
+}
+
 export function compareScreenshots(
     originalPath,
     generatedPath,
     diffPath = "screenshots/visual-diff.png",
     sections = []
 ) {
-    const original = readPng(originalPath);
-    const generated = readPng(generatedPath);
+    let original = readPng(originalPath);
+    let generated = readPng(generatedPath);
 
-    if (
-        original.width !== generated.width ||
-        original.height !== generated.height
-    ) {
+    if (original.width !== generated.width) {
         return {
             comparable: false,
             diffPixels: null,
@@ -67,8 +91,17 @@ export function compareScreenshots(
             generatedWidth: generated.width,
             generatedHeight: generated.height,
             diffPath: null,
-            reason: "Screenshot dimensions do not match."
+            reason: "Screenshot widths do not match."
         };
+    }
+
+    let heightNormalized = false;
+
+    if (original.height !== generated.height) {
+        const maxHeight = Math.max(original.height, generated.height);
+        original = padToHeight(original, maxHeight);
+        generated = padToHeight(generated, maxHeight);
+        heightNormalized = true;
     }
 
     const diff = new PNG({
@@ -84,7 +117,12 @@ export function compareScreenshots(
         original.height,
         {
             threshold: 0.1,
-            includeAA: false
+            includeAA: false,
+            // Mask mode: the diff buffer only marks pixels counted as
+            // changed. Without it pixelmatch paints a grayscale copy of the
+            // original onto unchanged pixels, which makes the salience scan
+            // below flag every non-black pixel as a difference.
+            diffMask: true
         }
     );
 
@@ -180,6 +218,7 @@ export function compareScreenshots(
 
     return {
         comparable: true,
+        heightNormalized,
         diffPixels,
         totalPixels,
         diffRatio: Number((diffPixels / totalPixels).toFixed(4)),

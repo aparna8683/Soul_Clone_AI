@@ -1,27 +1,6 @@
-import fs from "fs/promises";
-import Groq from "groq-sdk";
-
-const client = new Groq({
-    apiKey: process.env.GROQ_API_KEY
-});
-
-const VISION_MODEL = "qwen/qwen3.8-27b";
-
-async function toDataUrl(imagePath) {
-    const buffer = await fs.readFile(imagePath);
-    const base64 = buffer.toString("base64");
-    const extension = imagePath.toLowerCase().endsWith(".jpg") ||
-        imagePath.toLowerCase().endsWith(".jpeg")
-        ? "jpeg"
-        : "png";
-
-    return `data:image/${extension};base64,${base64}`;
-}
+import { runVisionAI } from "./groq.js";
 
 export async function critiqueGeneratedWebsite(originalPath, generatedPath) {
-    const original = await toDataUrl(originalPath);
-    const generated = await toDataUrl(generatedPath);
-
     const prompt = `
 You are a visual QA engineer for an AI website recreation system.
 
@@ -51,36 +30,20 @@ Rules:
 - Return JSON only.
 `;
 
-    const response = await client.chat.completions.create({
-        model: VISION_MODEL,
-        messages: [
-            {
-                role: "user",
-                content: [
-                    { type: "text", text: prompt },
-                    {
-                        type: "image_url",
-                        image_url: { url: original }
-                    },
-                    {
-                        type: "image_url",
-                        image_url: { url: generated }
-                    }
-                ]
-            }
-        ],
-        temperature: 0.1,
-        max_completion_tokens: 700,
-        response_format: { type: "json_object" }
-    }, {
-        timeout: 45000
-    });
+    const response = await runVisionAI(
+        prompt,
+        [originalPath, generatedPath],
+        {
+            temperature: 0.1,
+            max_completion_tokens: 700,
+            response_format: { type: "json_object" },
+            timeout: 45000
+        }
+    );
 
-    const content = response?.choices?.[0]?.message?.content?.trim();
-
-    if (!content) {
+    if (!response) {
         throw new Error("Visual critic returned an empty response.");
     }
 
-    return JSON.parse(content);
+    return JSON.parse(response);
 }

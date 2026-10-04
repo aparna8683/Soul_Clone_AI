@@ -142,6 +142,7 @@ The modification pipeline updates the React specification, regenerates the front
 ## Safety and reliability
 
 - Vision analysis is non-blocking. If the vision model fails, DOM/CSS analysis continues.
+- Groq 429 responses are retried with bounded backoff (honoring `retry-after`). Once quota is exhausted, later AI steps fail fast and fall back to deterministic planning instead of failing the request; responses report this via `aiStatus`.
 - Asset downloads are best-effort. Failed downloads fall back to source URLs.
 - Generated builds are validated before a preview URL is returned.
 - Build repair is bounded to avoid unbounded AI/code execution.

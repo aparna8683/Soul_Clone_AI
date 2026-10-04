@@ -1,6 +1,6 @@
 import express from "express";
 import path from "path";
-import { runAI } from "../ai/groq.js";
+import { runAI, getGroqQuotaStatus, summarizeRunAIStatus } from "../ai/groq.js";
 import { generateAppFile, generateMainFile, generateStylesFile, generateIndexFile, generatePackageFile } from "../generator/reactGenerator.js";
 import { validateAndRepairBuild } from "../generator/buildValidator.js";
 import { startPreviewServer } from "../preview/previewServer.js";
@@ -127,6 +127,8 @@ router.post("/", async (req, res) => {
 
         console.log(`\n🪄 Modifying project: "${instruction}"`);
 
+        const quotaFailuresBefore = getGroqQuotaStatus().quotaFailures;
+
         const aiPrompt = `You are a React UI modification agent.
 User instruction: "${instruction}"
 Current React Specification:
@@ -182,7 +184,7 @@ For "add" requests, append the new section without rewriting existing sections.`
 
                 visualCritique = await critiqueGeneratedWebsite(
                     websiteSpec.visualScreenshot || websiteSpec.screenshot,
-                    generatedScreenshot
+                    generatedScreenshot.viewport
                 );
 
                 console.log("🔎 Visual QA completed");
@@ -197,7 +199,8 @@ For "add" requests, append the new section without rewriting existing sections.`
             stylesCode,
             buildResult,
             previewUrl,
-            visualCritique
+            visualCritique,
+            aiStatus: summarizeRunAIStatus(quotaFailuresBefore)
         });
 
     } catch (error) {

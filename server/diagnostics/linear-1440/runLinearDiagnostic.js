@@ -8,7 +8,7 @@ import { extractDOM } from "../../browser/domExtractor.js";
 import { extractStructure } from "../../browser/structureExtractor.js";
 import { extractStyles } from "../../browser/cssExtractor.js";
 import { extractAssets } from "../../browser/assetExtractor.js";
-import { extractReconstructionIR } from "../../browser/reconstructionIR.js";
+import { extractReconstructionIR, settleAnimations } from "../../browser/reconstructionIR.js";
 import { buildWebsiteSpec } from "../../analyzer/specBuilder.js";
 import { downloadAssets } from "../../browser/assetDownloader.js";
 import {
@@ -35,6 +35,7 @@ try {
     const page = await browser.newPage({ viewport });
     await page.goto(sourceUrl, { waitUntil: "domcontentloaded", timeout: 45000 });
     await page.waitForTimeout(3000);
+    await settleAnimations(page);
 
     const [title, dom, structure, styles, assets, reconstructionIR] = await Promise.all([
         page.title(), extractDOM(page), extractStructure(page), extractStyles(page),

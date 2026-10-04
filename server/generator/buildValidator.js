@@ -38,7 +38,23 @@ export async function validateAndRepairBuild(generatedSiteDir, maxAttempts = 2) 
             }
 
             const filePath = path.join(generatedSiteDir, fileToFix);
-            await repairFile(filePath, errString, 1);
+            let repairApplied = false;
+
+            try {
+                repairApplied = Boolean(await repairFile(filePath, errString));
+            } catch (repairError) {
+                console.warn("⚠️ Build repair failed:", repairError.message);
+            }
+
+            if (!repairApplied) {
+                return {
+                    success: false,
+                    output: buildError.stdout,
+                    error: errString,
+                    repairUnavailable: true
+                };
+            }
+
             attempt++;
         }
     }

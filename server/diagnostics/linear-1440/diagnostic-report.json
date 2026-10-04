@@ -4,8 +4,8 @@
     "width": 1440,
     "height": 900
   },
-  "baselineGlobalSimilarity": 0.3314,
-  "afterGlobalSimilarity": 0.3383,
+  "baselineGlobalSimilarity": 0.7168,
+  "afterGlobalSimilarity": 0.7585,
   "afterSectionScores": [
     {
       "sectionId": "n2",
@@ -16,11 +16,11 @@
         "width": 1440,
         "height": 900
       },
-      "similarity": 89,
-      "errorPercentage": 11
+      "similarity": 93.4,
+      "errorPercentage": 6.6
     },
     {
-      "sectionId": "n5",
+      "sectionId": "n4",
       "heading": null,
       "boundingBox": {
         "x": 48,
@@ -28,8 +28,56 @@
         "width": 1344,
         "height": 629
       },
-      "similarity": 84.8,
-      "errorPercentage": 15.2
+      "similarity": 90.6,
+      "errorPercentage": 9.4
+    },
+    {
+      "sectionId": "n6",
+      "heading": null,
+      "boundingBox": {
+        "x": 0,
+        "y": 527,
+        "width": 1440,
+        "height": 373
+      },
+      "similarity": 94.5,
+      "errorPercentage": 5.5
+    },
+    {
+      "sectionId": "n7",
+      "heading": null,
+      "boundingBox": {
+        "x": 78,
+        "y": 272,
+        "width": 1282,
+        "height": 128
+      },
+      "similarity": 80.9,
+      "errorPercentage": 19.1
+    },
+    {
+      "sectionId": "n9",
+      "heading": null,
+      "boundingBox": {
+        "x": 0,
+        "y": 527,
+        "width": 1440,
+        "height": 373
+      },
+      "similarity": 94.5,
+      "errorPercentage": 5.5
+    },
+    {
+      "sectionId": "n13",
+      "heading": null,
+      "boundingBox": {
+        "x": 0,
+        "y": 491,
+        "width": 1440,
+        "height": 409
+      },
+      "similarity": 94.2,
+      "errorPercentage": 5.8
     },
     {
       "sectionId": "n14",
@@ -40,47 +88,11 @@
         "width": 1440,
         "height": 373
       },
-      "similarity": 80.5,
-      "errorPercentage": 19.5
+      "similarity": 94.5,
+      "errorPercentage": 5.5
     },
     {
-      "sectionId": "n29",
-      "heading": null,
-      "boundingBox": {
-        "x": 78,
-        "y": 272,
-        "width": 1282,
-        "height": 128
-      },
-      "similarity": 82.5,
-      "errorPercentage": 17.5
-    },
-    {
-      "sectionId": "n30",
-      "heading": null,
-      "boundingBox": {
-        "x": 0,
-        "y": 527,
-        "width": 1440,
-        "height": 373
-      },
-      "similarity": 80.5,
-      "errorPercentage": 19.5
-    },
-    {
-      "sectionId": "n46",
-      "heading": null,
-      "boundingBox": {
-        "x": 0,
-        "y": 527,
-        "width": 1440,
-        "height": 373
-      },
-      "similarity": 80.5,
-      "errorPercentage": 19.5
-    },
-    {
-      "sectionId": "n61",
+      "sectionId": "n20",
       "heading": null,
       "boundingBox": {
         "x": 60,
@@ -88,12 +100,60 @@
         "width": 1320,
         "height": 373
       },
-      "similarity": 80.8,
-      "errorPercentage": 19.2
+      "similarity": 94,
+      "errorPercentage": 6
+    },
+    {
+      "sectionId": "n188",
+      "heading": null,
+      "boundingBox": {
+        "x": 12,
+        "y": 527,
+        "width": 1416,
+        "height": 373
+      },
+      "similarity": 94.4,
+      "errorPercentage": 5.6
+    },
+    {
+      "sectionId": "n189",
+      "heading": null,
+      "boundingBox": {
+        "x": 60,
+        "y": 527,
+        "width": 1320,
+        "height": 373
+      },
+      "similarity": 94,
+      "errorPercentage": 6
+    },
+    {
+      "sectionId": "n190",
+      "heading": null,
+      "boundingBox": {
+        "x": 61,
+        "y": 528,
+        "width": 1318,
+        "height": 372
+      },
+      "similarity": 94.1,
+      "errorPercentage": 5.9
+    },
+    {
+      "sectionId": "n290",
+      "heading": null,
+      "boundingBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 73
+      },
+      "similarity": 93.4,
+      "errorPercentage": 6.6
     }
   ],
-  "extractedNodeCount": 260,
-  "generatedNodeCount": 260,
+  "extractedNodeCount": 600,
+  "generatedNodeCount": 600,
   "assetCount": 34,
   "downloadedImages": 20,
   "sections": [
@@ -123,15 +183,15 @@
         },
         "image": {
           "boundingBox": {
-            "x": 80,
-            "y": 3007,
-            "width": 36,
-            "height": 36
+            "x": 0,
+            "y": 491,
+            "width": 1440,
+            "height": 804
           },
-          "renderedWidth": 36,
-          "renderedHeight": 36,
-          "naturalWidth": 192,
-          "naturalHeight": 192,
+          "renderedWidth": 1440,
+          "renderedHeight": 804,
+          "naturalWidth": 2560,
+          "naturalHeight": 1429,
           "objectFit": "fill"
         }
       },
@@ -154,10 +214,10 @@
           "color": "rgb(247, 248, 248)"
         },
         "image": {
-          "width": 36,
-          "height": 36,
-          "naturalWidth": 192,
-          "naturalHeight": 192,
+          "width": 1440,
+          "height": 804,
+          "naturalWidth": 2560,
+          "naturalHeight": 1429,
           "objectFit": "fill"
         }
       },
@@ -171,7 +231,7 @@
     },
     {
       "section": "content-section",
-      "nodeId": "n5",
+      "nodeId": "n4",
       "source": {
         "boundingBox": {
           "x": 48,
@@ -193,7 +253,19 @@
           "textTransform": "none",
           "textDecoration": "none"
         },
-        "image": null
+        "image": {
+          "boundingBox": {
+            "x": 0,
+            "y": 491,
+            "width": 1440,
+            "height": 804
+          },
+          "renderedWidth": 1440,
+          "renderedHeight": 804,
+          "naturalWidth": 2560,
+          "naturalHeight": 1429,
+          "objectFit": "fill"
+        }
       },
       "generated": {
         "boundingBox": {
@@ -213,7 +285,13 @@
           "lineHeight": "24px",
           "color": "rgb(247, 248, 248)"
         },
-        "image": null
+        "image": {
+          "width": 1440,
+          "height": 804,
+          "naturalWidth": 2560,
+          "naturalHeight": 1429,
+          "objectFit": "fill"
+        }
       },
       "mismatch": {
         "x": 0,
@@ -225,7 +303,7 @@
     },
     {
       "section": "content-section",
-      "nodeId": "n14",
+      "nodeId": "n6",
       "source": {
         "boundingBox": {
           "x": 0,
@@ -247,7 +325,19 @@
           "textTransform": "none",
           "textDecoration": "none"
         },
-        "image": null
+        "image": {
+          "boundingBox": {
+            "x": 0,
+            "y": 491,
+            "width": 1440,
+            "height": 804
+          },
+          "renderedWidth": 1440,
+          "renderedHeight": 804,
+          "naturalWidth": 2560,
+          "naturalHeight": 1429,
+          "objectFit": "fill"
+        }
       },
       "generated": {
         "boundingBox": {
@@ -267,7 +357,13 @@
           "lineHeight": "24px",
           "color": "rgb(247, 248, 248)"
         },
-        "image": null
+        "image": {
+          "width": 1440,
+          "height": 804,
+          "naturalWidth": 2560,
+          "naturalHeight": 1429,
+          "objectFit": "fill"
+        }
       },
       "mismatch": {
         "x": 0,
@@ -279,7 +375,7 @@
     },
     {
       "section": "hero-heading",
-      "nodeId": "n29",
+      "nodeId": "n7",
       "source": {
         "boundingBox": {
           "x": 78,
@@ -333,7 +429,7 @@
     },
     {
       "section": "content-section",
-      "nodeId": "n30",
+      "nodeId": "n9",
       "source": {
         "boundingBox": {
           "x": 0,
@@ -355,7 +451,19 @@
           "textTransform": "none",
           "textDecoration": "none"
         },
-        "image": null
+        "image": {
+          "boundingBox": {
+            "x": 0,
+            "y": 491,
+            "width": 1440,
+            "height": 804
+          },
+          "renderedWidth": 1440,
+          "renderedHeight": 804,
+          "naturalWidth": 2560,
+          "naturalHeight": 1429,
+          "objectFit": "fill"
+        }
       },
       "generated": {
         "boundingBox": {
@@ -375,7 +483,13 @@
           "lineHeight": "24px",
           "color": "rgb(247, 248, 248)"
         },
-        "image": null
+        "image": {
+          "width": 1440,
+          "height": 804,
+          "naturalWidth": 2560,
+          "naturalHeight": 1429,
+          "objectFit": "fill"
+        }
       },
       "mismatch": {
         "x": 0,
@@ -387,7 +501,79 @@
     },
     {
       "section": "content-section",
-      "nodeId": "n46",
+      "nodeId": "n13",
+      "source": {
+        "boundingBox": {
+          "x": 0,
+          "y": 491,
+          "width": 1440,
+          "height": 804
+        },
+        "width": 1440,
+        "height": 804,
+        "x": 0,
+        "y": 491,
+        "typography": {
+          "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px",
+          "letterSpacing": "normal",
+          "color": "rgb(247, 248, 248)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": {
+          "boundingBox": {
+            "x": 0,
+            "y": 491,
+            "width": 1440,
+            "height": 804
+          },
+          "renderedWidth": 1440,
+          "renderedHeight": 804,
+          "naturalWidth": 2560,
+          "naturalHeight": 1429,
+          "objectFit": "fill"
+        }
+      },
+      "generated": {
+        "boundingBox": {
+          "x": 0,
+          "y": 490,
+          "width": 1440,
+          "height": 804
+        },
+        "width": 1440,
+        "height": 804,
+        "x": 0,
+        "y": 490,
+        "typography": {
+          "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px",
+          "color": "rgb(247, 248, 248)"
+        },
+        "image": {
+          "width": 1440,
+          "height": 804,
+          "naturalWidth": 2560,
+          "naturalHeight": 1429,
+          "objectFit": "fill"
+        }
+      },
+      "mismatch": {
+        "x": 0,
+        "y": -1,
+        "width": 0,
+        "height": 0
+      },
+      "likelyCause": "geometry is close"
+    },
+    {
+      "section": "content-section",
+      "nodeId": "n14",
       "source": {
         "boundingBox": {
           "x": 0,
@@ -409,7 +595,19 @@
           "textTransform": "none",
           "textDecoration": "none"
         },
-        "image": null
+        "image": {
+          "boundingBox": {
+            "x": 374,
+            "y": 1051,
+            "width": 16,
+            "height": 16
+          },
+          "renderedWidth": 16,
+          "renderedHeight": 16,
+          "naturalWidth": 64,
+          "naturalHeight": 64,
+          "objectFit": "fill"
+        }
       },
       "generated": {
         "boundingBox": {
@@ -421,6 +619,138 @@
         "width": 1440,
         "height": 720,
         "x": 0,
+        "y": 526,
+        "typography": {
+          "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px",
+          "color": "rgb(247, 248, 248)"
+        },
+        "image": {
+          "width": 16,
+          "height": 16,
+          "naturalWidth": 64,
+          "naturalHeight": 64,
+          "objectFit": "fill"
+        }
+      },
+      "mismatch": {
+        "x": 0,
+        "y": -1,
+        "width": 0,
+        "height": 0
+      },
+      "likelyCause": "geometry is close"
+    },
+    {
+      "section": "content-section",
+      "nodeId": "n20",
+      "source": {
+        "boundingBox": {
+          "x": 60,
+          "y": 527,
+          "width": 1320,
+          "height": 720
+        },
+        "width": 1320,
+        "height": 720,
+        "x": 60,
+        "y": 527,
+        "typography": {
+          "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px",
+          "letterSpacing": "normal",
+          "color": "rgb(247, 248, 248)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": {
+          "boundingBox": {
+            "x": 374,
+            "y": 1051,
+            "width": 16,
+            "height": 16
+          },
+          "renderedWidth": 16,
+          "renderedHeight": 16,
+          "naturalWidth": 64,
+          "naturalHeight": 64,
+          "objectFit": "fill"
+        }
+      },
+      "generated": {
+        "boundingBox": {
+          "x": 60,
+          "y": 526,
+          "width": 1320,
+          "height": 720
+        },
+        "width": 1320,
+        "height": 720,
+        "x": 60,
+        "y": 526,
+        "typography": {
+          "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px",
+          "color": "rgb(247, 248, 248)"
+        },
+        "image": {
+          "width": 16,
+          "height": 16,
+          "naturalWidth": 64,
+          "naturalHeight": 64,
+          "objectFit": "fill"
+        }
+      },
+      "mismatch": {
+        "x": 0,
+        "y": -1,
+        "width": 0,
+        "height": 0
+      },
+      "likelyCause": "geometry is close"
+    },
+    {
+      "section": "content-section",
+      "nodeId": "n188",
+      "source": {
+        "boundingBox": {
+          "x": 12,
+          "y": 527,
+          "width": 1416,
+          "height": 768
+        },
+        "width": 1416,
+        "height": 768,
+        "x": 12,
+        "y": 527,
+        "typography": {
+          "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px",
+          "letterSpacing": "normal",
+          "color": "rgb(247, 248, 248)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": null
+      },
+      "generated": {
+        "boundingBox": {
+          "x": 12,
+          "y": 526,
+          "width": 1416,
+          "height": 768
+        },
+        "width": 1416,
+        "height": 768,
+        "x": 12,
         "y": 526,
         "typography": {
           "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
@@ -441,7 +771,7 @@
     },
     {
       "section": "content-section",
-      "nodeId": "n61",
+      "nodeId": "n189",
       "source": {
         "boundingBox": {
           "x": 60,
@@ -488,6 +818,114 @@
       "mismatch": {
         "x": 0,
         "y": -1,
+        "width": 0,
+        "height": 0
+      },
+      "likelyCause": "geometry is close"
+    },
+    {
+      "section": "content-section",
+      "nodeId": "n190",
+      "source": {
+        "boundingBox": {
+          "x": 61,
+          "y": 528,
+          "width": 1318,
+          "height": 718
+        },
+        "width": 1318,
+        "height": 718,
+        "x": 61,
+        "y": 528,
+        "typography": {
+          "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px",
+          "letterSpacing": "normal",
+          "color": "rgb(247, 248, 248)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": null
+      },
+      "generated": {
+        "boundingBox": {
+          "x": 61,
+          "y": 527,
+          "width": 1318,
+          "height": 718
+        },
+        "width": 1318,
+        "height": 718,
+        "x": 61,
+        "y": 527,
+        "typography": {
+          "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px",
+          "color": "rgb(247, 248, 248)"
+        },
+        "image": null
+      },
+      "mismatch": {
+        "x": 0,
+        "y": -1,
+        "width": 0,
+        "height": 0
+      },
+      "likelyCause": "geometry is close"
+    },
+    {
+      "section": "header",
+      "nodeId": "n290",
+      "source": {
+        "boundingBox": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 73
+        },
+        "width": 1440,
+        "height": 73,
+        "x": 0,
+        "y": 0,
+        "typography": {
+          "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px",
+          "letterSpacing": "normal",
+          "color": "rgb(247, 248, 248)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": null
+      },
+      "generated": {
+        "boundingBox": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 73
+        },
+        "width": 1440,
+        "height": 73,
+        "x": 0,
+        "y": 0,
+        "typography": {
+          "fontFamily": "\"Inter Variable\", \"SF Pro Display\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Oxygen, Ubuntu, Cantarell, \"Open Sans\", \"Helvetica Neue\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "24px",
+          "color": "rgb(247, 248, 248)"
+        },
+        "image": null
+      },
+      "mismatch": {
+        "x": 0,
+        "y": 0,
         "width": 0,
         "height": 0
       },

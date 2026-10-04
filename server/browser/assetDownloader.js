@@ -9,6 +9,71 @@ function extensionFromContentType(contentType = "") {
     return "jpg";
 }
 
+async function downloadBackgroundImages(websiteSpec, assetsDir) {
+    const entries = websiteSpec?.assets?.backgroundImages || [];
+    const seen = new Set();
+    const queue = [];
+
+    for (const entry of entries.slice(0, 12)) {
+        entry.files = [];
+        const urls = [...String(entry.src || "").matchAll(/url\((['"]?)([^'")]+)\1\)/g)]
+            .map((match) => match[2])
+            .filter((url) => /^https?:\/\//i.test(url));
+
+        for (const url of urls.slice(0, 2)) {
+            if (!seen.has(url)) {
+                seen.add(url);
+                queue.push({ entry, url });
+            } else {
+                // Repeated background (e.g. decorative pattern): reuse the
+                // first entry that owns the URL once it is localized below.
+                queue.push({ entry, url, shared: true });
+            }
+        }
+    }
+
+    let downloaded = 0;
+    const localized = new Map();
+
+    for (const item of queue) {
+        if (item.shared && localized.has(item.url)) {
+            item.entry.files.push({
+                original: item.url,
+                local: localized.get(item.url)
+            });
+            continue;
+        }
+        if (downloaded >= 10) break;
+
+        try {
+            const response = await fetch(item.url, {
+                signal: AbortSignal.timeout(10000),
+                headers: { "User-Agent": "SoulClone-AI/1.0" }
+            });
+
+            if (!response.ok) continue;
+
+            const contentType = response.headers.get("content-type") || "";
+            if (!contentType.startsWith("image/")) continue;
+
+            const buffer = Buffer.from(await response.arrayBuffer());
+            const extension = extensionFromContentType(contentType);
+            const fileName = `bg-${downloaded}.${extension}`;
+
+            await fs.writeFile(path.join(assetsDir, fileName), buffer);
+
+            const localPath = `/assets/${fileName}`;
+            localized.set(item.url, localPath);
+            item.entry.files.push({ original: item.url, local: localPath });
+            downloaded++;
+        } catch (error) {
+            console.warn(`⚠️ Could not download background image:`, error.message);
+        }
+    }
+
+    console.log(`🖼️ Local background images prepared: ${downloaded}`);
+}
+
 export async function downloadAssets(websiteSpec, generatedDir) {
     const images = websiteSpec?.assets?.images || [];
     const assetsDir = path.join(generatedDir, "public", "assets");
@@ -58,6 +123,12 @@ export async function downloadAssets(websiteSpec, generatedDir) {
     }
 
     console.log(`🖼️ Local assets prepared: ${downloaded}/${Math.min(images.length, 20)}`);
+
+    try {
+        await downloadBackgroundImages(websiteSpec, assetsDir);
+    } catch (error) {
+        console.warn("⚠️ Background image localization failed:", error.message);
+    }
 
     return websiteSpec;
 }

@@ -8,7 +8,7 @@ import { captureScreenshot, captureVisualScreenshot } from "./screenshot.js";
 import { analyzeScreenshot } from "../ai/visionAgent.js";
 import { analyzeResponsive } from "./responsiveAnalyzer.js";
 import { captureSectionEvidence } from "./sectionScreenshot.js";
-import { extractReconstructionIR } from "./reconstructionIR.js";
+import { extractReconstructionIR, settleAnimations } from "./reconstructionIR.js";
 
 import { buildWebsiteSpec } from "../analyzer/specBuilder.js";
 
@@ -45,6 +45,9 @@ export async function analyzeWebsite(url) {
 
         // Give JavaScript-rendered content a little time to appear.
         await page.waitForTimeout(3000);
+
+        console.log("🎬 Settling entrance animations...");
+        await settleAnimations(page);
 
         console.log("📄 Extracting page title...");
         const title = await page.title();

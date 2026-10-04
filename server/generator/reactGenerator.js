@@ -11,7 +11,14 @@ export async function generateReactSpec(
     componentPlan,
     { useAI = true } = {}
 ) {
-    if (!useAI) return deterministicReactSpec(websiteSpec);
+    if (!useAI || shouldRenderSourceDom(websiteSpec)) {
+        if (useAI) {
+            console.log(
+                "🧭 Semantic extraction is too sparse for the page; using the captured DOM tree (source-dom mode)."
+            );
+        }
+        return deterministicReactSpec(websiteSpec);
+    }
     const input = {
         page: {
             title: websiteSpec.metadata.title,
@@ -23,7 +30,7 @@ export async function generateReactSpec(
 
         // Keep structure compact to control AI token usage.
         landmarks: (websiteSpec.structure.landmarks || [])
-            .slice(0, 6)
+            .slice(0, 8)
             .map((landmark) => ({
                 tag: landmark.tag,
                 className: landmark.className,
@@ -33,7 +40,7 @@ export async function generateReactSpec(
             })),
 
         structure: websiteSpec.structure.sections
-            .slice(0, 10)
+            .slice(0, 16)
             .map((section) => ({
                 tag: section.tag,
                 heading: section.heading,
@@ -65,33 +72,33 @@ export async function generateReactSpec(
 
         content: {
             headings: websiteSpec.content.headings
-                .slice(0, 10)
+                .slice(0, 14)
                 .map((heading) => ({
                     tag: heading.tag,
                     text: heading.text
                 })),
 
             paragraphs: websiteSpec.content.paragraphs
-                .slice(0, 6),
+                .slice(0, 10),
 
             buttons: websiteSpec.content.buttons
-                .slice(0, 6)
+                .slice(0, 10)
                 .filter((button) => button.text)
                 .map((button) => ({ text: button.text, url: button.url })),
 
             textBlocks: websiteSpec.content.textBlocks
-                ? websiteSpec.content.textBlocks.slice(0, 12)
+                ? websiteSpec.content.textBlocks.slice(0, 18)
                 : [],
 
             controls: websiteSpec.content.controls
-                ? websiteSpec.content.controls.slice(0, 6)
+                ? websiteSpec.content.controls.slice(0, 10)
                 : []
         },
 
         visualAnalysis: websiteSpec.visualAnalysis || null,
 
         sectionEvidence: (websiteSpec.sectionEvidence || [])
-            .slice(0, 10)
+            .slice(0, 14)
             .map((evidence) => ({
                 sectionIndex: evidence.sectionIndex,
                 heading: evidence.heading,
@@ -118,7 +125,7 @@ export async function generateReactSpec(
         // Do NOT send huge image URLs to the AI.
         // Give each image a compact ID instead.
         assets: websiteSpec.assets.images
-            .slice(0, 12)
+            .slice(0, 18)
             .map((image, index) => ({
                 id: `img-${index}`,
                 src: image.src ? "[source]" : "",
@@ -127,7 +134,6 @@ export async function generateReactSpec(
                 height: image.height,
                 aspectRatio: image.aspectRatio,
                 semanticRole: image.semanticRole,
-                alt: image.alt,
                 parentText: image.parentText?.slice(0, 80),
                 local: Boolean(image.local)
             }))
@@ -234,10 +240,10 @@ ${JSON.stringify(input)}
     try {
         const response = await runAI(prompt, {
             temperature: 0.2,
-            max_completion_tokens: 1500,
+            max_completion_tokens: 6000,
             response_format: { type: "json_object" },
             reasoning_effort: "none",
-            timeout: 60000
+            timeout: 90000
         });
         return enrichReactSpec(JSON.parse(response), websiteSpec);
     } catch (error) {
@@ -348,6 +354,42 @@ function slugify(value = "") {
     .replace(/^-+|-+$/g, "");
 }
 
+// The heading-based section extractor collapses on many real-world sites
+// (e.g. one hero div for an entire 13,000px page). When that happens the
+// template pipeline would rebuild the site from almost no evidence, so the
+// bounded DOM tree captured in the ReconstructionIR is the better source
+// of truth and the generator switches to source-dom rendering.
+function shouldRenderSourceDom(websiteSpec) {
+    const ir = websiteSpec?.reconstructionIR;
+    if (!ir?.nodes?.length) return false;
+
+    const extracted = websiteSpec?.structure?.sections || [];
+    if (!extracted.length) return true;
+
+    const semanticSections = ir.nodes.filter((node) =>
+        ["section", "footer"].includes(node.role)
+    );
+
+    if (semanticSections.length >= 3 && extracted.length < 3) return true;
+
+    const documentHeight = Number(ir.document?.height || 0);
+    if (documentHeight > 1600) {
+        const covered = extracted.reduce(
+            (total, section) => total + Number(section?.size?.height || 0),
+            0
+        );
+
+        if (
+            covered < documentHeight * 0.45 &&
+            semanticSections.length > extracted.length
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function enrichReactSpec(reactSpec, websiteSpec) {
   const result = {
     ...reactSpec,
@@ -366,9 +408,12 @@ function enrichReactSpec(reactSpec, websiteSpec) {
     }
   };
 
-  if (!result.sections.length && websiteSpec.reconstructionIR?.nodes?.length) {
+  if (shouldRenderSourceDom(websiteSpec)) {
+    const extracted = websiteSpec?.structure?.sections || [];
     result.renderMode = "source-dom";
-    result.renderReason = "No semantic sections were returned; render the extracted visible DOM tree.";
+    result.renderReason = extracted.length
+      ? "Semantic section extraction only covered part of the page; rendering the captured DOM tree preserves the full layout."
+      : "No semantic sections were returned; render the extracted visible DOM tree.";
   }
 
   const sourceSections = websiteSpec?.structure?.sections || [];
@@ -1299,6 +1344,23 @@ function createSourceDomApp(websiteSpec) {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   const roots = websiteSpec.reconstructionIR?.roots || [];
   const images = websiteSpec.assets?.images || [];
+  // Original remote URL -> downloaded local asset path. Downloaded <img>
+  // assets keep their original URL in currentSrc; CSS background images are
+  // localized by the asset downloader with an explicit files map.
+  const localAssetByUrl = new Map();
+  for (const image of images) {
+    if (image.local && image.currentSrc) localAssetByUrl.set(image.currentSrc, image.src);
+  }
+  for (const background of websiteSpec.assets?.backgroundImages || []) {
+    for (const file of background.files || []) {
+      localAssetByUrl.set(file.original, file.local);
+    }
+  }
+  const localizeBackgroundImage = (value) =>
+    String(value || "").replace(
+      /url\((['"]?)([^'")]+)\1\)/g,
+      (match, quote, url) => `url("${localAssetByUrl.get(url) || url}")`
+    );
   const validTags = new Set(["div", "header", "nav", "main", "section", "article", "aside", "footer", "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "strong", "b", "em", "i", "small", "ul", "ol", "li", "a", "button", "img", "picture", "label", "form", "input", "textarea", "select", "option", "blockquote", "figure", "figcaption", "hr", "br"]);
   const sourceNodes = nodes.map((node) => {
     const style = {};
@@ -1313,8 +1375,33 @@ function createSourceDomApp(websiteSpec) {
     for (const [from, to] of [["width", "width"], ["maxWidth", "maxWidth"], ["height", "height"], ["minHeight", "minHeight"]]) put(to, node.dimensions?.[from]);
     put("fontFamily", node.typography?.fontFamily); put("fontSize", node.typography?.fontSize); put("fontWeight", node.typography?.fontWeight); put("lineHeight", node.typography?.lineHeight); put("letterSpacing", node.typography?.letterSpacing); put("color", node.typography?.color); put("textTransform", node.typography?.textTransform); put("textDecoration", node.typography?.textDecoration); put("textAlign", node.textAlign);
     put("backgroundColor", node.surface?.backgroundColor);
+    // Keep gradients and background images: rewrite remote URLs to the
+    // downloaded local assets when available so hero art and section
+    // backgrounds survive the clone. Inline data URLs are dropped to keep
+    // the generated payload small.
     const backgroundImage = node.surface?.backgroundImage;
-    if (backgroundImage && !backgroundImage.includes("url(")) put("backgroundImage", backgroundImage);
+    if (backgroundImage && backgroundImage !== "none") {
+      const hasDataUrl = /url\((['"]?)data:/i.test(backgroundImage);
+      if (!hasDataUrl) {
+        style.backgroundImage = backgroundImage.includes("url(")
+          ? localizeBackgroundImage(backgroundImage)
+          : backgroundImage;
+        // Texture overlays (grain, glow art) depend on their sizing and blend
+        // mode; without them a 256px grain tile stretches across the section.
+        put("backgroundSize", node.surface?.backgroundSize);
+        put("backgroundRepeat", node.surface?.backgroundRepeat);
+        put("backgroundPosition", node.surface?.backgroundPosition);
+        put("backgroundBlendMode", node.surface?.backgroundBlendMode);
+        put("mixBlendMode", node.surface?.mixBlendMode);
+      }
+    }
+    if (
+      node.surface?.webkitBackgroundClip === "text" ||
+      node.surface?.backgroundClip === "text"
+    ) {
+      style.WebkitBackgroundClip = "text";
+      style.backgroundClip = "text";
+    }
     put("border", node.surface?.border); put("borderRadius", node.surface?.borderRadius); put("boxShadow", node.surface?.boxShadow); put("opacity", node.surface?.opacity); put("overflow", node.surface?.overflow); put("zIndex", node.surface?.zIndex); put("backdropFilter", node.surface?.backdropFilter);
     const parent = nodesById.get(node.parentId);
     if (parent?.display === "block") {
@@ -1997,12 +2084,27 @@ img { max-width: 100%; display: block; }
       if (section.type === "hero" && Number(geometry.height) > 0) declarations.push(`min-height: ${Math.min(1100, Math.max(300, Number(geometry.height)))}px`);
       return declarations.length ? `[data-reconstruction-section="${index}"] { ${declarations.join("; ")}; }` : "";
     }).filter(Boolean).join("\n");
+    const isTransparentColor = (value) =>
+      typeof value === "string" &&
+      /^rgba?\([^)]*,\s*0\s*\)\s*$/i.test(value.trim());
     const typographyRules = Object.entries(theme.typography || {}).map(([selector, source]) => {
       if (!["h1", "h2", "p", "button"].includes(selector)) return "";
       const declarations = [];
       for (const [key, property] of [["fontFamily", "font-family"], ["fontSize", "font-size"], ["fontWeight", "font-weight"], ["lineHeight", "line-height"], ["letterSpacing", "letter-spacing"], ["color", "color"]]) {
         const value = safeCssValue(source?.[key]);
-        if (value) declarations.push(`${property}: ${value} !important`);
+        if (!value || (key === "color" && isTransparentColor(value))) continue;
+        declarations.push(`${property}: ${value} !important`);
+      }
+      // Gradient headline text (background-clip: text) reproduces far better
+      // with the real gradient than with any solid substitute color.
+      const gradient = safeCssValue(source?.backgroundImage);
+      if (source?.backgroundClipText && gradient && !gradient.includes("url(")) {
+        declarations.push(
+          `background-image: ${gradient} !important`,
+          "-webkit-background-clip: text !important",
+          "background-clip: text !important",
+          "color: transparent !important"
+        );
       }
       return declarations.length ? `${selector} { ${declarations.join("; ")}; }` : "";
     }).filter(Boolean).join("\n");

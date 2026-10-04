@@ -19,6 +19,7 @@ import { compareScreenshots } from "../ai/visualDiff.js";
 import { repairReactSpecVisually } from "../ai/visualRepairAgent.js";
 import { downloadAssets, copySectionEvidence } from "../browser/assetDownloader.js";
 import { setLatestWebsiteSpec } from "../state.js";
+import { getGroqQuotaStatus, summarizeRunAIStatus } from "../ai/groq.js";
 
 const router = express.Router();
 
@@ -79,8 +80,8 @@ async function runVisualRepairLoop({
 
     try {
         bestDiff = compareScreenshots(
-            websiteSpec.visualScreenshot || websiteSpec.screenshot,
-            bestScreenshot,
+            websiteSpec.screenshot,
+            bestScreenshot.fullPage,
             "screenshots/visual-diff.png",
             getVisualRegions(websiteSpec)
         );
@@ -156,8 +157,8 @@ async function runVisualRepairLoop({
                 await captureGeneratedScreenshot(candidatePreviewUrl);
 
             const candidateDiff = compareScreenshots(
-                websiteSpec.visualScreenshot || websiteSpec.screenshot,
-                candidateScreenshot,
+                websiteSpec.screenshot,
+                candidateScreenshot.fullPage,
                 "screenshots/visual-diff.png",
                 getVisualRegions(websiteSpec)
             );
@@ -171,7 +172,7 @@ async function runVisualRepairLoop({
             const candidateCritique =
                 await critiqueGeneratedWebsite(
                     websiteSpec.visualScreenshot || websiteSpec.screenshot,
-                    candidateScreenshot
+                    candidateScreenshot.viewport
                 );
 
             const improved =
@@ -261,6 +262,8 @@ router.post("/", async (req, res) => {
 
         console.log(`\n🌐 Analyzing website: ${url}`);
 
+        const quotaFailuresBefore = getGroqQuotaStatus().quotaFailures;
+
         const websiteSpec = await analyzeWebsite(url);
         console.log("✅ WebsiteSpec created");
 
@@ -311,8 +314,8 @@ router.post("/", async (req, res) => {
 
                 try {
                     visualDiff = compareScreenshots(
-                        websiteSpec.visualScreenshot || websiteSpec.screenshot,
-                        generatedScreenshot,
+                        websiteSpec.screenshot,
+                        generatedScreenshot.fullPage,
                         "screenshots/visual-diff.png",
                         getVisualRegions(websiteSpec)
                     );
@@ -324,7 +327,7 @@ router.post("/", async (req, res) => {
                     visualCritique = await critiqueGeneratedWebsite(
                         websiteSpec.visualScreenshot ||
                             websiteSpec.screenshot,
-                        generatedScreenshot
+                        generatedScreenshot.viewport
                     );
                 } catch (criticError) {
                     console.warn("AI visual critique unavailable:", criticError.message);
@@ -368,6 +371,7 @@ router.post("/", async (req, res) => {
         res.json({
             componentPlan,
             reactSpec,
+            aiStatus: summarizeRunAIStatus(quotaFailuresBefore),
             extractionSummary: {
                 visibleElementCount: websiteSpec.reconstructionIR?.nodes?.length || 0,
                 sectionCount: websiteSpec.structure.sections?.length || 0,
@@ -382,6 +386,7 @@ router.post("/", async (req, res) => {
             visualDiff: visualDiff
                 ? {
                     comparable: visualDiff.comparable,
+                    heightNormalized: visualDiff.heightNormalized || false,
                     diffPixels: visualDiff.diffPixels,
                     totalPixels: visualDiff.totalPixels,
                     diffRatio: visualDiff.diffRatio,

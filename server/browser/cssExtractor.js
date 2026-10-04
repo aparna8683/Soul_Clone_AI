@@ -4,12 +4,47 @@ export async function extractStyles(page) {
         const getStyles = (element) => {
             const computed = window.getComputedStyle(element);
 
+            const backgroundImage =
+                computed.backgroundImage !== "none"
+                    ? computed.backgroundImage
+                    : null;
+            const clipToText =
+                computed.webkitBackgroundClip === "text" ||
+                computed.backgroundClip === "text";
+
+            // The paint color of gradient text lives in the background
+            // gradient, not in `color` (which is often a misleading fallback
+            // or fully transparent). Use the gradient's first color stop as
+            // the representative color and flag the element so consumers can
+            // reproduce the actual gradient.
+            const fillColor =
+                computed.webkitTextFillColor &&
+                computed.webkitTextFillColor !== "currentcolor"
+                    ? computed.webkitTextFillColor
+                    : computed.color;
+            const isTransparent = /^rgba?\([^)]*,\s*0\s*\)\s*$/i.test(
+                String(fillColor)
+            );
+
+            let color = fillColor;
+            if (clipToText && backgroundImage && /gradient\(/i.test(backgroundImage)) {
+                const stop = backgroundImage.match(
+                    /#[0-9a-f]{3,8}\b|rgba?\([^)]*\)/i
+                );
+                color = stop ? stop[0] : fillColor;
+            } else if (isTransparent) {
+                color = null;
+            }
+
             return {
                 tag: element.tagName.toLowerCase(),
 
-                color: computed.color,
+                color,
 
                 backgroundColor: computed.backgroundColor,
+
+                backgroundImage,
+                backgroundClipText: clipToText,
 
                 fontFamily: computed.fontFamily,
 

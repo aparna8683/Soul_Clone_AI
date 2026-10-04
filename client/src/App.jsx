@@ -15,6 +15,7 @@ function App() {
     const [visualCritique, setVisualCritique] = useState(null);
     const [visualDiff, setVisualDiff] = useState(null);
     const [visualRepairIterations, setVisualRepairIterations] = useState(0);
+    const [aiStatus, setAiStatus] = useState(null);
 
     const handleGenerate = async () => {
         if (!url) return;
@@ -27,6 +28,7 @@ function App() {
         setVisualCritique(null);
         setVisualDiff(null);
         setVisualRepairIterations(0);
+        setAiStatus(null);
         setStatus("Analyzing website...");
 
         try {
@@ -49,6 +51,7 @@ function App() {
             setVisualCritique(data.visualCritique || null);
             setVisualDiff(data.visualDiff || null);
             setVisualRepairIterations(data.visualRepairIterations || 0);
+            setAiStatus(data.aiStatus || null);
 
             setStatus(
                 data.buildResult?.success
@@ -92,6 +95,7 @@ function App() {
             setReactSpec(data.reactSpec);
             setPreviewUrl(data.previewUrl || previewUrl);
             setVisualCritique(data.visualCritique || null);
+            setAiStatus(data.aiStatus || null);
             setModifyInstruction("");
             setModifyStatus("Modification complete!");
         } catch (error) {
@@ -154,6 +158,21 @@ function App() {
                                 )}
                             </div>
                         </section>
+
+                        {aiStatus?.degraded && (
+                            <section className="success-section">
+                                <div className="success-card warning-card">
+                                    <h3>⚠️ AI Enhancement Unavailable</h3>
+                                    <p>
+                                        Groq quota was exhausted during this run, so parts of the result were
+                                        generated with the deterministic fallback and may be less accurate.
+                                        {aiStatus.retryInSeconds
+                                            ? ` AI calls should recover in about ${aiStatus.retryInSeconds}s.`
+                                            : ""}
+                                    </p>
+                                </div>
+                            </section>
+                        )}
 
                         {visualDiff?.comparable && (
                             <section className="success-section">

@@ -22,16 +22,23 @@ export async function captureGeneratedScreenshot(previewUrl) {
             }
         });
 
+        await page.evaluate(() => document.fonts.ready).catch(() => {});
         await page.waitForTimeout(1000);
 
-        const screenshotPath = "screenshots/generated.png";
+        const viewportPath = "screenshots/generated.png";
+        const fullPagePath = "screenshots/generated-full.png";
 
         await page.screenshot({
-            path: screenshotPath,
+            path: viewportPath,
             fullPage: false
         });
 
-        return screenshotPath;
+        await page.screenshot({
+            path: fullPagePath,
+            fullPage: true
+        });
+
+        return { viewport: viewportPath, fullPage: fullPagePath };
     } finally {
         await browser.close();
     }
