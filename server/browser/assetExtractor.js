@@ -1,7 +1,12 @@
 export async function extractAssets(page) {
     const assets = await page.evaluate(() => {
-        const images = Array.from(document.querySelectorAll("img")).map((img, index) => {
+        const images = Array.from(document.querySelectorAll("img")).filter((img) => {
             const rect = img.getBoundingClientRect();
+            const styles = getComputedStyle(img);
+            return rect.width > 1 && rect.height > 1 && styles.display !== "none" && styles.visibility !== "hidden" && Number(styles.opacity) !== 0;
+        }).map((img, index) => {
+            const rect = img.getBoundingClientRect();
+            const styles = getComputedStyle(img);
             const parentText = img.parentElement?.innerText?.replace(/\\s+/g, " ").trim() || "";
             const source = img.currentSrc || img.src || "";
             const alt = img.alt || "";
@@ -42,6 +47,12 @@ export async function extractAssets(page) {
                 height: img.naturalHeight,
                 renderedWidth: Math.round(rect.width),
                 renderedHeight: Math.round(rect.height),
+                x: Math.round(rect.x),
+                y: Math.round(rect.y + scrollY),
+                currentSrc: img.currentSrc || null,
+                objectFit: styles.objectFit,
+                objectPosition: styles.objectPosition,
+                visible: true,
                 aspectRatio,
                 area: Math.round(rect.width * rect.height),
                 parentText: parentText.slice(0, 180),
@@ -50,9 +61,13 @@ export async function extractAssets(page) {
                     ? "avatar"
                     : looksLikeLogo
                         ? "logo"
-                        : img.naturalWidth >= 700 || img.naturalHeight >= 450
-                            ? "large-visual"
-                            : "content-image"
+                        : /icon|symbol/i.test(`${alt} ${className} ${source}`)
+                            ? "icon"
+                            : rect.width >= innerWidth * 0.45 || rect.height >= 320
+                                ? "hero-image"
+                                : img.naturalWidth >= 700 || img.naturalHeight >= 450
+                                    ? "product-screenshot"
+                                    : "content-image"
             };
         });
 
@@ -78,7 +93,12 @@ export async function extractAssets(page) {
             ) {
                 backgroundImages.push({
                     type: "background-image",
-                    src: backgroundImage
+                    src: backgroundImage,
+                    tag: element.tagName.toLowerCase(),
+                    x: Math.round(element.getBoundingClientRect().x),
+                    y: Math.round(element.getBoundingClientRect().y + scrollY),
+                    width: Math.round(element.getBoundingClientRect().width),
+                    height: Math.round(element.getBoundingClientRect().height)
                 });
             }
         });
@@ -86,7 +106,7 @@ export async function extractAssets(page) {
         return {
             images,
             icons: links,
-            backgroundImages
+            backgroundImages: backgroundImages.slice(0, 40)
         };
     });
 

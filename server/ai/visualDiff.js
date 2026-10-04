@@ -47,7 +47,8 @@ function estimateBackground(data, width, height) {
 export function compareScreenshots(
     originalPath,
     generatedPath,
-    diffPath = "screenshots/visual-diff.png"
+    diffPath = "screenshots/visual-diff.png",
+    sections = []
 ) {
     const original = readPng(originalPath);
     const generated = readPng(generatedPath);
@@ -153,6 +154,30 @@ export function compareScreenshots(
               (0.65 * foregroundSimilarity)
             : baseSimilarity;
 
+    const sectionScores = sections.slice(0, 12).map((section, index) => {
+        const box = section.box || {
+            x: section.position?.x || 0,
+            y: section.position?.y || 0,
+            width: section.size?.width || original.width,
+            height: section.size?.height || 0
+        };
+        const left = Math.max(0, Math.floor(box.x || 0));
+        const top = Math.max(0, Math.floor(box.y || 0));
+        const right = Math.min(original.width, Math.ceil(left + box.width));
+        const bottom = Math.min(original.height, Math.ceil(top + box.height));
+        let pixels = 0, changedPixels = 0;
+        for (let y = top; y < bottom; y += 1) for (let x = left; x < right; x += 1) {
+            const offset = (y * original.width + x) * 4;
+            pixels += 1;
+            const redDelta = original.data[offset] - generated.data[offset];
+            const greenDelta = original.data[offset + 1] - generated.data[offset + 1];
+            const blueDelta = original.data[offset + 2] - generated.data[offset + 2];
+            if ((redDelta * redDelta) + (greenDelta * greenDelta) + (blueDelta * blueDelta) > (255 * 0.1) ** 2) changedPixels += 1;
+        }
+        const errorPercentage = pixels ? Number((changedPixels * 100 / pixels).toFixed(1)) : null;
+        return { sectionId: section.id || `section-${index + 1}`, heading: section.heading || null, boundingBox: { x: left, y: top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) }, similarity: errorPercentage == null ? null : Number((100 - errorPercentage).toFixed(1)), errorPercentage };
+    });
+
     return {
         comparable: true,
         diffPixels,
@@ -163,6 +188,7 @@ export function compareScreenshots(
         foregroundSimilarity: Number(
             foregroundSimilarity.toFixed(4)
         ),
+        sections: sectionScores,
         salientPixels,
         salientPixelRatio: Number(
             (salientPixels / totalPixels).toFixed(4)

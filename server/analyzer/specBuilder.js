@@ -9,7 +9,8 @@ export function buildWebsiteSpec({
     visualScreenshot,
     responsive,
     visualAnalysis,
-    sectionEvidence = []
+    sectionEvidence = [],
+    reconstructionIR = null
 }) {
     return {
         metadata: {
@@ -46,6 +47,7 @@ export function buildWebsiteSpec({
         screenshot,
         visualScreenshot,
         sectionEvidence,
+        reconstructionIR,
 
         responsive,
         visualAnalysis: visualAnalysis || null

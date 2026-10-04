@@ -9,18 +9,17 @@ Public URL
    |
    v
 Playwright browser analysis
-   |---- DOM/content
-   |---- CSS/computed styles
-   |---- structure + landmarks
-   |---- assets
-   |---- responsive behavior
+   |---- visible content + meaningful section boundaries
+   |---- bounded ReconstructionIR (geometry, hierarchy, computed CSS)
+   |---- image source, rendered size, fit and semantic role
+   |---- desktop/tablet/mobile structure snapshots
    |---- screenshots
    |
    v
-Groq Vision Analyzer
+Groq semantic interpretation (optional)
    |
    v
-WebsiteSpec / visual blueprint
+WebsiteSpec + ReconstructionIR
    |
    v
 Groq UI Architecture Agent
@@ -29,7 +28,7 @@ Groq UI Architecture Agent
 ReactSpec
    |
    v
-React/Vite generator
+React/Vite generator (source-derived surfaces, spacing and hero geometry)
    |
    v
 Build Validator + bounded repair
@@ -41,7 +40,7 @@ Local Vite Preview
 Generated Screenshot
    |
    v
-Groq Visual Critic
+Pixel diff with section-level scores + optional Groq visual critic/repair
 ```
 
 The generated website is a new React implementation. It does not iframe or embed the original website.
@@ -59,9 +58,13 @@ The generated website is a new React implementation. It does not iframe or embed
 ## Features
 
 - Public URL analysis
-- DOM, CSS, structure, asset and responsive extraction
+- Bounded visible-element tree with DOM parent/child links, bounding boxes, layout primitives, typography, surfaces, content and links
+- Responsive snapshots at desktop, tablet and mobile widths
+- Image visibility, rendered/natural dimensions, object fit and object position; avatar/logo/icon detection to avoid promoting them to hero media
 - Screenshot-based visual analysis
-- Structured WebsiteSpec
+- Structured WebsiteSpec and ReconstructionIR; the tree is capped at 260 meaningful visible nodes
+- Extracted section padding, gap, backgrounds/gradients, radii and hero height are carried into generated CSS
+- Deterministic section plan when Groq analysis or generation is unavailable, including rate limits
 - AI component planning
 - AI React specification generation
 - React/Vite file generation
@@ -69,7 +72,7 @@ The generated website is a new React implementation. It does not iframe or embed
 - Build validation
 - Bounded AI build repair
 - Local preview
-- Visual comparison/QA
+- Visual comparison/QA with per-section bounding boxes and similarity/error scores
 - Natural-language modification of generated websites
 
 ## Run locally
@@ -147,3 +150,13 @@ The modification pipeline updates the React specification, regenerates the front
 ## Notes
 
 The system is intentionally designed to generalize across multiple public websites instead of using a hardcoded template for one site.
+
+## Reconstruction pipeline
+
+Playwright captures a compact, bounded `ReconstructionIR` alongside the existing `WebsiteSpec`. Each retained visible node records its hierarchy, viewport/document geometry, computed flex/grid layout, spacing, typography, borders, backgrounds, effects, text/link details, and image sizing. The extractor excludes hidden and zero-size nodes and caps the tree to keep analysis and AI prompts manageable. Existing desktop/tablet/mobile analysis remains in place.
+
+Groq is used for semantic section/component interpretation. The extractor's measurements remain the source for section surfaces and sizing; if AI planning is unavailable (including 429 responses), the system derives a conservative React specification from extracted headings, sections, and suitable media. The generator still produces independent React/Vite markup. It does not display the source page in an iframe, embed, proxy, or screenshot-as-page.
+
+The pixel comparison returns both a global score and scores for extracted section boxes that overlap the captured viewport. The visual critic is optional and isolated from pixel comparison, so a model quota failure no longer suppresses the deterministic diff.
+
+Current limits: the generated templates do not yet reproduce arbitrary DOM trees node for node; some complex canvas/video visuals and CSS background assets cannot be recreated from computed styles alone; section comparison currently covers the screenshot viewport rather than a full-page tiled comparison; semantic fallback can preserve the main structure but may omit fine-grained content groupings. Live similarity scores vary with browser access to the source site and should be treated as indicative.

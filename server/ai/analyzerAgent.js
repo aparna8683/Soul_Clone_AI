@@ -184,11 +184,22 @@ ${JSON.stringify(aiInput)}
         "characters"
     );
 
-    const response = await runAI(prompt, {
-        temperature: 0.2,
-        max_completion_tokens: 900,
-        response_format: { type: "json_object" }
-    });
-
-    return JSON.parse(response);
+    try {
+        const response = await runAI(prompt, {
+            temperature: 0.2,
+            max_completion_tokens: 900,
+            response_format: { type: "json_object" }
+        });
+        return JSON.parse(response);
+    } catch (error) {
+        console.warn("AI component planning unavailable; using extracted page structure:", error.message);
+        return {
+            pageType: "website",
+            components: (websiteSpec.structure.sections || []).slice(0, 12).map((section, index) => ({
+                name: `${section.tag || "Section"}${index + 1}`,
+                purpose: section.heading || "Visible content section",
+                priority: index < 3 ? "high" : "medium"
+            }))
+        };
+    }
 }

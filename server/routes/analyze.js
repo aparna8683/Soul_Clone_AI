@@ -25,6 +25,20 @@ const router = express.Router();
 const MAX_VISUAL_REPAIR_ITERATIONS = 2;
 const MIN_VISUAL_IMPROVEMENT = 0.005;
 
+function getVisualRegions(websiteSpec) {
+    const measured = websiteSpec.structure.sections || [];
+    if (measured.length) return measured;
+    const blocks = (websiteSpec.structure.visualBlocks || []).map((block, index) => ({
+        id: `content-${index + 1}`, heading: block.heading || null,
+        position: block.position, size: block.size
+    }));
+    if (blocks.length) return blocks;
+    return (websiteSpec.reconstructionIR?.nodes || [])
+        .filter((node) => ["header", "main", "footer", "section"].includes(node.role))
+        .slice(0, 12)
+        .map((node) => ({ id: node.id, heading: node.text, position: { x: node.box.x, y: node.box.y }, size: { width: node.box.width, height: node.box.height } }));
+}
+
 async function writeGeneratedProject(reactSpec, websiteSpec, generatedDir) {
     const appCode = await generateAppFile(reactSpec, websiteSpec);
     console.log("⚛️ App.jsx generated");
@@ -66,7 +80,9 @@ async function runVisualRepairLoop({
     try {
         bestDiff = compareScreenshots(
             websiteSpec.visualScreenshot || websiteSpec.screenshot,
-            bestScreenshot
+            bestScreenshot,
+            "screenshots/visual-diff.png",
+            getVisualRegions(websiteSpec)
         );
         console.log(
             `📊 Initial visual similarity: ${(
@@ -141,7 +157,9 @@ async function runVisualRepairLoop({
 
             const candidateDiff = compareScreenshots(
                 websiteSpec.visualScreenshot || websiteSpec.screenshot,
-                candidateScreenshot
+                candidateScreenshot,
+                "screenshots/visual-diff.png",
+                getVisualRegions(websiteSpec)
             );
 
             console.log(
@@ -291,28 +309,42 @@ router.post("/", async (req, res) => {
 
                 console.log("📸 Generated screenshot captured");
 
-                visualCritique =
-                    await critiqueGeneratedWebsite(
+                try {
+                    visualDiff = compareScreenshots(
+                        websiteSpec.visualScreenshot || websiteSpec.screenshot,
+                        generatedScreenshot,
+                        "screenshots/visual-diff.png",
+                        getVisualRegions(websiteSpec)
+                    );
+                } catch (diffError) {
+                    console.warn("Pixel comparison unavailable:", diffError.message);
+                }
+
+                try {
+                    visualCritique = await critiqueGeneratedWebsite(
                         websiteSpec.visualScreenshot ||
                             websiteSpec.screenshot,
                         generatedScreenshot
                     );
+                } catch (criticError) {
+                    console.warn("AI visual critique unavailable:", criticError.message);
+                }
 
-                console.log("🔎 Visual QA completed");
-
-                const repaired = await runVisualRepairLoop({
+                const repaired = visualCritique ? await runVisualRepairLoop({
                     websiteSpec,
                     reactSpec,
                     generatedDir,
                     initialScreenshot: generatedScreenshot,
                     initialCritique: visualCritique
-                });
+                }) : null;
 
-                reactSpec = repaired.reactSpec;
-                generatedScreenshot = repaired.screenshot;
-                visualCritique = repaired.critique;
-                visualDiff = repaired.diff;
-                visualRepairIterations = repaired.iterations;
+                if (repaired) {
+                    reactSpec = repaired.reactSpec;
+                    generatedScreenshot = repaired.screenshot;
+                    visualCritique = repaired.critique;
+                    visualDiff = repaired.diff || visualDiff;
+                    visualRepairIterations = repaired.iterations;
+                }
 
                 // The final generated files are the accepted best version.
                 if (visualRepairIterations > 0) {
@@ -336,6 +368,14 @@ router.post("/", async (req, res) => {
         res.json({
             componentPlan,
             reactSpec,
+            extractionSummary: {
+                visibleElementCount: websiteSpec.reconstructionIR?.nodes?.length || 0,
+                sectionCount: websiteSpec.structure.sections?.length || 0,
+                visualBlockCount: websiteSpec.structure.visualBlocks?.length || 0,
+                extractedImages: websiteSpec.assets.images?.length || 0,
+                downloadedImages: websiteSpec.assets.images?.filter((image) => image.local).length || 0,
+                responsiveViewports: Object.keys(websiteSpec.responsive || {})
+            },
             buildResult,
             previewUrl,
             visualCritique,
@@ -346,6 +386,7 @@ router.post("/", async (req, res) => {
                     totalPixels: visualDiff.totalPixels,
                     diffRatio: visualDiff.diffRatio,
                     similarity: visualDiff.similarity,
+                    sections: visualDiff.sections,
                     width: visualDiff.width,
                     height: visualDiff.height
                 }

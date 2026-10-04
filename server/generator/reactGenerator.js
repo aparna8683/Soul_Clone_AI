@@ -1,4 +1,4 @@
-import { runAI, runVisionAI } from "../ai/groq.js";
+import { runAI } from "../ai/groq.js";
 import { writeGeneratedFile } from "./fileGenerator.js";
 
 
@@ -8,8 +8,10 @@ import { writeGeneratedFile } from "./fileGenerator.js";
 
 export async function generateReactSpec(
     websiteSpec,
-    componentPlan
+    componentPlan,
+    { useAI = true } = {}
 ) {
+    if (!useAI) return deterministicReactSpec(websiteSpec);
     const input = {
         page: {
             title: websiteSpec.metadata.title,
@@ -185,8 +187,8 @@ Use exactly this structure:
 Rules:
 
 1. Use the supplied website evidence.
-2. Treat the supplied screenshot as the PRIMARY visual source of truth.
-3. Treat visualAnalysis, DOM text, geometry, CSS and section evidence as supporting evidence.
+2. Treat measured DOM geometry and computed CSS as authoritative for layout and styling.
+3. Use AI only to interpret ambiguous section semantics and content relationships.
 4. Follow the component plan without forcing sections into generic templates.
 5. Preserve exact visible text from the supplied DOM whenever possible.
 6. Never invent or remove CTA/button text when source text exists.
@@ -202,7 +204,7 @@ Rules:
 13. Use navItems for navigation links instead of placing them in items.
 15. For images, return the supplied asset ID such as "assets/img-0".
 16. Prefer faithful reconstruction over generic UI patterns.
-17. The screenshot is authoritative for visual composition: reproduce the visible proportions, whitespace, alignment, scale and hierarchy.
+17. Do not invent dimensions, spacing, colors, fonts or image scales where measured values are supplied.
 18. Do not substitute a generic gradient/card for a visible product UI or illustration.
 19. If section evidence identifies a captured visual asset, prefer that exact local visual asset.
 20. Keep buttons and navigation labels exactly as extracted unless the source visibly has no label.
@@ -229,21 +231,47 @@ ${JSON.stringify(input)}
         "characters"
     );
 
-    const response = await runVisionAI(
-        prompt,
-        [websiteSpec.visualScreenshot],
-        {
+    try {
+        const response = await runAI(prompt, {
             temperature: 0.2,
             max_completion_tokens: 1500,
             response_format: { type: "json_object" },
             reasoning_effort: "none",
             timeout: 60000
-        }
-    );
+        });
+        return enrichReactSpec(JSON.parse(response), websiteSpec);
+    } catch (error) {
+        console.warn("AI React planning unavailable; deriving sections from DOM and CSS evidence:", error.message);
+        return deterministicReactSpec(websiteSpec);
+    }
 
-    const parsed = JSON.parse(response);
-    return enrichReactSpec(parsed, websiteSpec);
+}
 
+function deterministicReactSpec(site) {
+    const headings = site.content?.headings || [];
+    const body = site.design?.styles?.body || {};
+    const sections = (site.structure?.sections || []).slice(0, 12).map((source, index) => {
+        const heading = source.heading || headings[index]?.text || "";
+        const media = (source.media || []).filter((item) => {
+            const asset = site.assets?.images?.[item.assetIndex];
+            return asset && !["avatar", "logo"].includes(asset.semanticRole);
+        }).sort((a, b) => (b.width * b.height) - (a.width * a.height))[0];
+        const role = /footer/i.test(source.tag) ? "footer" : index === 0 && source.position?.y < 600 ? "hero" : media && media.width > 500 ? "showcase" : "features";
+        return {
+            type: role, title: heading,
+            description: (site.content?.paragraphs || [])[index] || "",
+            buttons: index === 0 ? (site.content?.buttons || []).slice(0, 2).map(({ text, url }) => ({ text, url })) : [],
+            layout: role === "hero" ? "center" : role === "showcase" ? "wide" : "default",
+            columns: Math.max(1, Math.min(4, source.gridColumns || 3)),
+            background: source.backgroundColor || "",
+            image: media ? `assets/img-${media.assetIndex}` : "",
+            imageAspectRatio: media && media.width / Math.max(media.height, 1) > 1.7 ? "wide" : "auto",
+            visual: { minHeight: source.size?.height || 0, contentWidth: source.size?.width || 0, imageWidth: media?.width || 0, imagePosition: role === "hero" ? "below" : "right", spacing: source.gap || "" },
+            items: [], navItems: []
+        };
+    });
+    const background = body.backgroundColor || "#ffffff";
+    return enrichReactSpec({ theme: { fontFamily: body.fontFamily || "system-ui, sans-serif", primaryColor: "#635bff", secondaryColor: background, textColor: body.color || "#171717", backgroundColor: background }, sections }, site);
 }
 
 
@@ -328,6 +356,21 @@ function enrichReactSpec(reactSpec, websiteSpec) {
       : []
   };
 
+  result.theme = {
+    ...(result.theme || {}),
+    typography: {
+      h1: websiteSpec.design?.styles?.h1 || {},
+      h2: websiteSpec.design?.styles?.h2 || {},
+      p: websiteSpec.design?.styles?.p || {},
+      button: websiteSpec.design?.styles?.button || {}
+    }
+  };
+
+  if (!result.sections.length && websiteSpec.reconstructionIR?.nodes?.length) {
+    result.renderMode = "source-dom";
+    result.renderReason = "No semantic sections were returned; render the extracted visible DOM tree.";
+  }
+
   const sourceSections = websiteSpec?.structure?.sections || [];
   const sourceImages = websiteSpec?.assets?.images || [];
   const sectionEvidence = websiteSpec?.sectionEvidence || [];
@@ -387,6 +430,24 @@ function enrichReactSpec(reactSpec, websiteSpec) {
 
   for (const section of result.sections) {
     const source = findSourceSection(section);
+    if (source) {
+      section.sourceGeometry = {
+        width: source.size?.width,
+        height: source.size?.height,
+        padding: source.padding,
+        gap: source.gap,
+        backgroundColor: source.backgroundColor,
+        backgroundImage: source.backgroundImage,
+        display: source.display,
+        flexDirection: source.flexDirection,
+        gridColumns: source.gridColumns,
+        borderRadius: source.borderRadius,
+        typography: {
+          fontFamily: source.fontFamily, fontSize: source.fontSize, fontWeight: source.fontWeight,
+          lineHeight: source.lineHeight, letterSpacing: source.letterSpacing, color: source.color
+        }
+      };
+    }
     const media = source?.media || [];
     const evidence = source
       ? evidenceByIndex.get(source.sectionIndex)
@@ -530,6 +591,9 @@ function enrichReactSpec(reactSpec, websiteSpec) {
 
 
 function createAppComponent(reactSpec, websiteSpec) {
+  if (reactSpec?.renderMode === "source-dom") {
+    return createSourceDomApp(websiteSpec);
+  }
   const sections = reactSpec.sections || [];
 
   const getSiteName = () => {
@@ -631,7 +695,7 @@ function createAppComponent(reactSpec, websiteSpec) {
       .join("");
   };
 
-  const sectionCode = sections
+  let sectionCode = sections
     .map((section, sectionIndex) => {
       const type = section.type || "section";
 
@@ -1118,6 +1182,11 @@ function createAppComponent(reactSpec, websiteSpec) {
     })
     .join("\n");
 
+  let sourceTagIndex = 0;
+  sectionCode = sectionCode.replace(/<(section|header|footer)\b/g, (openingTag) =>
+    `${openingTag} data-reconstruction-section="${sourceTagIndex++}"`
+  );
+
   /*
    * IMPORTANT:
    * This template generates the final App.jsx.
@@ -1147,8 +1216,80 @@ function App() {
     </div>
   );
 }
-
 export default App;
+`;
+}
+
+function createSourceDomApp(websiteSpec) {
+  const nodes = websiteSpec.reconstructionIR?.nodes || [];
+  const nodesById = new Map(nodes.map((node) => [node.id, node]));
+  const roots = websiteSpec.reconstructionIR?.roots || [];
+  const images = websiteSpec.assets?.images || [];
+  const validTags = new Set(["div", "header", "nav", "main", "section", "article", "aside", "footer", "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "strong", "b", "em", "i", "small", "ul", "ol", "li", "a", "button", "img", "picture", "label", "form", "input", "textarea", "select", "option", "blockquote", "figure", "figcaption", "hr", "br"]);
+  const sourceNodes = nodes.map((node) => {
+    const style = {};
+    const put = (key, value) => { if (value && value !== "none" && value !== "normal" && value !== "auto" && !/[{};]/.test(String(value))) style[key] = value; };
+    put("display", node.display);
+    put("position", node.position);
+    put("transform", node.transform);
+    put("boxSizing", node.boxSizing);
+    for (const side of ["top", "right", "bottom", "left"]) put(side, node.inset?.[side]);
+    for (const [from, to] of [["flexDirection", "flexDirection"], ["flexWrap", "flexWrap"], ["justifyContent", "justifyContent"], ["alignItems", "alignItems"], ["gap", "gap"], ["gridTemplateColumns", "gridTemplateColumns"]]) put(to, node.layout?.[from]);
+    put("padding", node.spacing?.padding); put("margin", node.spacing?.margin);
+    for (const [from, to] of [["width", "width"], ["maxWidth", "maxWidth"], ["height", "height"], ["minHeight", "minHeight"]]) put(to, node.dimensions?.[from]);
+    put("fontFamily", node.typography?.fontFamily); put("fontSize", node.typography?.fontSize); put("fontWeight", node.typography?.fontWeight); put("lineHeight", node.typography?.lineHeight); put("letterSpacing", node.typography?.letterSpacing); put("color", node.typography?.color); put("textTransform", node.typography?.textTransform); put("textDecoration", node.typography?.textDecoration); put("textAlign", node.textAlign);
+    put("backgroundColor", node.surface?.backgroundColor);
+    const backgroundImage = node.surface?.backgroundImage;
+    if (backgroundImage && !backgroundImage.includes("url(")) put("backgroundImage", backgroundImage);
+    put("border", node.surface?.border); put("borderRadius", node.surface?.borderRadius); put("boxShadow", node.surface?.boxShadow); put("opacity", node.surface?.opacity); put("overflow", node.surface?.overflow); put("zIndex", node.surface?.zIndex); put("backdropFilter", node.surface?.backdropFilter);
+    const parent = nodesById.get(node.parentId);
+    if (parent?.display === "block") {
+      const px = (value) => Number.parseFloat(value) || 0;
+      const marginTop = px(node.spacing?.margin?.split(" ")[0]);
+      const siblingIndex = parent.children?.indexOf(node.id) ?? -1;
+      const previous = siblingIndex > 0 ? nodesById.get(parent.children[siblingIndex - 1]) : null;
+      const expectedTop = previous
+        ? previous.box.y + previous.box.height + marginTop
+        : parent.box.y + px(parent.spacing?.padding?.split(" ")[0]) + px(parent.surface?.border?.split(" ")[0]) + marginTop;
+      const measuredFlowGap = node.box.y - expectedTop;
+      if (measuredFlowGap > 8 && measuredFlowGap < 1200) style.marginTop = `${marginTop + measuredFlowGap}px`;
+    }
+    if (node.position === "absolute" || node.position === "fixed") {
+      style.width = `${node.box.width}px`;
+      style.minHeight = `${node.box.height}px`;
+    }
+    let src = null;
+    if (node.image?.src) {
+      const asset = images.find((item) => item.currentSrc === node.image.currentSrc || item.src === node.image.src || item.currentSrc === node.image.src);
+      src = asset?.src || node.image.src;
+      style.width = `${node.box.width}px`; style.height = `${node.box.height}px`;
+      put("objectFit", node.image.objectFit); put("objectPosition", node.image.objectPosition);
+    }
+    return { id: node.id, tag: validTags.has(node.tag) ? node.tag : "div", children: node.children, text: node.text, href: node.href, image: node.image ? { src, alt: node.image.alt } : null, style };
+  });
+  const payload = JSON.stringify({ nodes: sourceNodes, roots }).replace(/</g, "\\u003c");
+  return `
+import React from "react";
+import "./styles.css";
+
+const PAGE = ${payload};
+const NODE_MAP = new Map(PAGE.nodes.map((node) => [node.id, node]));
+
+function renderSourceNode(id) {
+  const node = NODE_MAP.get(id);
+  if (!node) return null;
+  const props = { key: node.id, style: node.style, "data-source-node": node.id };
+  if (node.tag === "a") props.href = node.href || "#";
+  if (node.tag === "button") props.type = "button";
+  if (node.tag === "img") { props.src = node.image?.src || ""; props.alt = node.image?.alt || ""; }
+  if (["input", "textarea", "select"].includes(node.tag)) props["aria-label"] = node.text || undefined;
+  const children = [...(node.text ? [node.text] : []), ...(node.children || []).map(renderSourceNode)];
+  return React.createElement(node.tag, props, ...children);
+}
+
+export default function App() {
+  return <div className="app source-dom">{PAGE.roots.map(renderSourceNode)}</div>;
+}
 `;
 }
 
@@ -1214,6 +1355,18 @@ export async function generateStylesFile(reactSpec) {
     const secondaryColor = theme.secondaryColor || "#f6f9fc";
     const textColor = theme.textColor || "#0a2540";
     const backgroundColor = theme.backgroundColor || "#ffffff";
+
+    if (reactSpec?.renderMode === "source-dom") {
+        const sourceStyles = `
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; width: 100%; min-height: 100%; }
+body { color: ${textColor}; background: ${backgroundColor}; font-family: ${fontFamily}; }
+.app.source-dom { width: 100%; min-height: 100vh; overflow-x: hidden; }
+.source-dom img { display: block; max-width: none; }
+`;
+        await writeGeneratedFile("src/styles.css", sourceStyles);
+        return sourceStyles;
+    }
 
     const styles = `
 :root {
@@ -1754,8 +1907,30 @@ img { max-width: 100%; display: block; }
 }
 `;
 
-    await writeGeneratedFile("src/styles.css", styles);
-    return styles;
+    const safeCssValue = (value) => typeof value === "string" && !/[;{}<>]/.test(value) ? value : "";
+    const geometryRules = (reactSpec?.sections || []).map((section, index) => {
+      const geometry = section.sourceGeometry || {};
+      const declarations = [];
+      if (geometry.padding) declarations.push(`padding: ${safeCssValue(geometry.padding)} !important`);
+      if (geometry.gap) declarations.push(`gap: ${safeCssValue(geometry.gap)}`);
+      if (geometry.backgroundColor && geometry.backgroundColor !== "rgba(0, 0, 0, 0)") declarations.push(`background-color: ${safeCssValue(geometry.backgroundColor)} !important`);
+      if (geometry.backgroundImage?.startsWith("linear-gradient(") || geometry.backgroundImage?.startsWith("radial-gradient(")) declarations.push(`background-image: ${safeCssValue(geometry.backgroundImage)} !important`);
+      if (geometry.borderRadius && geometry.borderRadius !== "0px") declarations.push(`border-radius: ${safeCssValue(geometry.borderRadius)}`);
+      if (section.type === "hero" && Number(geometry.height) > 0) declarations.push(`min-height: ${Math.min(1100, Math.max(300, Number(geometry.height)))}px`);
+      return declarations.length ? `[data-reconstruction-section="${index}"] { ${declarations.join("; ")}; }` : "";
+    }).filter(Boolean).join("\n");
+    const typographyRules = Object.entries(theme.typography || {}).map(([selector, source]) => {
+      if (!["h1", "h2", "p", "button"].includes(selector)) return "";
+      const declarations = [];
+      for (const [key, property] of [["fontFamily", "font-family"], ["fontSize", "font-size"], ["fontWeight", "font-weight"], ["lineHeight", "line-height"], ["letterSpacing", "letter-spacing"], ["color", "color"]]) {
+        const value = safeCssValue(source?.[key]);
+        if (value) declarations.push(`${property}: ${value} !important`);
+      }
+      return declarations.length ? `${selector} { ${declarations.join("; ")}; }` : "";
+    }).filter(Boolean).join("\n");
+    const finalStyles = `${styles}\n/* Extracted source typography, surfaces and spacing */\n${typographyRules}\n${geometryRules}\n`;
+    await writeGeneratedFile("src/styles.css", finalStyles);
+    return finalStyles;
 }
 
 

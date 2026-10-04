@@ -8,6 +8,7 @@ import { captureScreenshot, captureVisualScreenshot } from "./screenshot.js";
 import { analyzeScreenshot } from "../ai/visionAgent.js";
 import { analyzeResponsive } from "./responsiveAnalyzer.js";
 import { captureSectionEvidence } from "./sectionScreenshot.js";
+import { extractReconstructionIR } from "./reconstructionIR.js";
 
 import { buildWebsiteSpec } from "../analyzer/specBuilder.js";
 
@@ -54,6 +55,9 @@ export async function analyzeWebsite(url) {
         console.log("🏗️ Extracting structure...");
         const structure = await extractStructure(page);
 
+        console.log("🧭 Extracting bounded reconstruction IR...");
+        const reconstructionIR = await extractReconstructionIR(page);
+
         console.log("🎨 Extracting styles...");
         const styles = await extractStyles(page);
 
@@ -98,7 +102,8 @@ export async function analyzeWebsite(url) {
             visualScreenshot,
             responsive,
             visualAnalysis,
-            sectionEvidence
+            sectionEvidence,
+            reconstructionIR
         });
 
         console.log("✅ WebsiteSpec created");

@@ -42,11 +42,28 @@ export async function analyzeResponsive(page) {
                     text:
                         element.textContent?.trim().slice(0, 100) || null,
 
+                    x: Math.round(rect.x),
+                    y: Math.round(rect.y + window.scrollY),
                     width: Math.round(rect.width),
                     height: Math.round(rect.height),
 
                     display: styles.display,
-                    position: styles.position
+                    position: styles.position,
+                    flexDirection: styles.flexDirection,
+                    gridTemplateColumns: styles.gridTemplateColumns,
+                    gap: styles.gap,
+                    padding: styles.padding,
+                    margin: styles.margin,
+                    fontFamily: styles.fontFamily,
+                    fontSize: styles.fontSize,
+                    fontWeight: styles.fontWeight,
+                    lineHeight: styles.lineHeight,
+                    color: styles.color,
+                    backgroundColor: styles.backgroundColor,
+                    backgroundImage: styles.backgroundImage !== "none" ? styles.backgroundImage : null,
+                    borderRadius: styles.borderRadius,
+                    objectFit: styles.objectFit || null,
+                    parentTag: element.parentElement?.tagName.toLowerCase() || null
                 };
             };
 
@@ -54,7 +71,11 @@ export async function analyzeResponsive(page) {
                 document.querySelectorAll(
                     "header, nav, main, section, article, footer, button"
                 )
-            ).map(getElementInfo);
+            ).filter((element) => {
+                const rect = element.getBoundingClientRect();
+                const styles = window.getComputedStyle(element);
+                return rect.width > 1 && rect.height > 1 && styles.display !== "none" && styles.visibility !== "hidden" && Number(styles.opacity) !== 0;
+            }).slice(0, 120).map(getElementInfo);
 
             return {
                 viewport: {

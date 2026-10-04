@@ -1,0 +1,511 @@
+{
+  "sourceUrl": "https://stripe.com/",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "baselineGlobalSimilarity": null,
+  "afterGlobalSimilarity": 0.2082,
+  "afterSectionScores": [
+    {
+      "sectionId": "n2",
+      "heading": null,
+      "boundingBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 76
+      },
+      "similarity": 46.2,
+      "errorPercentage": 53.8
+    },
+    {
+      "sectionId": "n3",
+      "heading": null,
+      "boundingBox": {
+        "x": 0,
+        "y": 76,
+        "width": 1440,
+        "height": 824
+      },
+      "similarity": 53.5,
+      "errorPercentage": 46.5
+    },
+    {
+      "sectionId": "n6",
+      "heading": null,
+      "boundingBox": {
+        "x": 0,
+        "y": 76,
+        "width": 1440,
+        "height": 685
+      },
+      "similarity": 52.2,
+      "errorPercentage": 47.8
+    },
+    {
+      "sectionId": "n7",
+      "heading": null,
+      "boundingBox": {
+        "x": 0,
+        "y": 761,
+        "width": 1440,
+        "height": 139
+      },
+      "similarity": 60.1,
+      "errorPercentage": 39.9
+    },
+    {
+      "sectionId": "n17",
+      "heading": null,
+      "boundingBox": {
+        "x": 87,
+        "y": 761,
+        "width": 1266,
+        "height": 139
+      },
+      "similarity": 54.6,
+      "errorPercentage": 45.4
+    },
+    {
+      "sectionId": "n25",
+      "heading": null,
+      "boundingBox": {
+        "x": 104,
+        "y": 197,
+        "width": 1232,
+        "height": 370
+      },
+      "similarity": 54.1,
+      "errorPercentage": 45.9
+    },
+    {
+      "sectionId": "n37",
+      "heading": null,
+      "boundingBox": {
+        "x": 208,
+        "y": 258,
+        "width": 958,
+        "height": 221
+      },
+      "similarity": 50.9,
+      "errorPercentage": 49.1
+    },
+    {
+      "sectionId": "n38",
+      "heading": null,
+      "boundingBox": {
+        "x": 208,
+        "y": 258,
+        "width": 958,
+        "height": 221
+      },
+      "similarity": 50.9,
+      "errorPercentage": 49.1
+    },
+    {
+      "sectionId": "n216",
+      "heading": null,
+      "boundingBox": {
+        "x": 0,
+        "y": 761,
+        "width": 1440,
+        "height": 139
+      },
+      "similarity": 60.1,
+      "errorPercentage": 39.9
+    }
+  ],
+  "extractedNodeCount": 260,
+  "generatedNodeCount": 0,
+  "assetCount": 20,
+  "downloadedImages": 20,
+  "sections": [
+    {
+      "section": "header",
+      "nodeId": "n2",
+      "source": {
+        "boundingBox": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 76
+        },
+        "width": 1440,
+        "height": 76,
+        "x": 0,
+        "y": 0,
+        "typography": {
+          "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": null
+      },
+      "generated": null,
+      "mismatch": {
+        "x": null,
+        "y": null,
+        "width": null,
+        "height": null
+      },
+      "likelyCause": "source node missing from generated React tree"
+    },
+    {
+      "section": "main",
+      "nodeId": "n3",
+      "source": {
+        "boundingBox": {
+          "x": 0,
+          "y": 76,
+          "width": 1440,
+          "height": 13435
+        },
+        "width": 1440,
+        "height": 13435,
+        "x": 0,
+        "y": 76,
+        "typography": {
+          "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": {
+          "boundingBox": {
+            "x": 104,
+            "y": 5040,
+            "width": 1232,
+            "height": 531
+          },
+          "renderedWidth": 1232,
+          "renderedHeight": 531,
+          "naturalWidth": 0,
+          "naturalHeight": 0,
+          "objectFit": "fill"
+        }
+      },
+      "generated": null,
+      "mismatch": {
+        "x": null,
+        "y": null,
+        "width": null,
+        "height": null
+      },
+      "likelyCause": "source node missing from generated React tree"
+    },
+    {
+      "section": "section",
+      "nodeId": "n6",
+      "source": {
+        "boundingBox": {
+          "x": 0,
+          "y": 76,
+          "width": 1440,
+          "height": 685
+        },
+        "width": 1440,
+        "height": 685,
+        "x": 0,
+        "y": 76,
+        "typography": {
+          "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": null
+      },
+      "generated": null,
+      "mismatch": {
+        "x": null,
+        "y": null,
+        "width": null,
+        "height": null
+      },
+      "likelyCause": "source node missing from generated React tree"
+    },
+    {
+      "section": "section",
+      "nodeId": "n7",
+      "source": {
+        "boundingBox": {
+          "x": 0,
+          "y": 761,
+          "width": 1440,
+          "height": 2196
+        },
+        "width": 1440,
+        "height": 2196,
+        "x": 0,
+        "y": 761,
+        "typography": {
+          "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": {
+          "boundingBox": {
+            "x": 99,
+            "y": 2409,
+            "width": 1243,
+            "height": 454
+          },
+          "renderedWidth": 1243,
+          "renderedHeight": 454,
+          "naturalWidth": 1232,
+          "naturalHeight": 450,
+          "objectFit": "cover"
+        }
+      },
+      "generated": null,
+      "mismatch": {
+        "x": null,
+        "y": null,
+        "width": null,
+        "height": null
+      },
+      "likelyCause": "source node missing from generated React tree"
+    },
+    {
+      "section": "content-section",
+      "nodeId": "n17",
+      "source": {
+        "boundingBox": {
+          "x": 87,
+          "y": 761,
+          "width": 1266,
+          "height": 2196
+        },
+        "width": 1266,
+        "height": 2196,
+        "x": 87,
+        "y": 761,
+        "typography": {
+          "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": {
+          "boundingBox": {
+            "x": 99,
+            "y": 2409,
+            "width": 1243,
+            "height": 454
+          },
+          "renderedWidth": 1243,
+          "renderedHeight": 454,
+          "naturalWidth": 1232,
+          "naturalHeight": 450,
+          "objectFit": "cover"
+        }
+      },
+      "generated": null,
+      "mismatch": {
+        "x": null,
+        "y": null,
+        "width": null,
+        "height": null
+      },
+      "likelyCause": "source node missing from generated React tree"
+    },
+    {
+      "section": "content-section",
+      "nodeId": "n25",
+      "source": {
+        "boundingBox": {
+          "x": 104,
+          "y": 197,
+          "width": 1232,
+          "height": 370
+        },
+        "width": 1232,
+        "height": 370,
+        "x": 104,
+        "y": 197,
+        "typography": {
+          "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": null
+      },
+      "generated": null,
+      "mismatch": {
+        "x": null,
+        "y": null,
+        "width": null,
+        "height": null
+      },
+      "likelyCause": "source node missing from generated React tree"
+    },
+    {
+      "section": "hero-heading",
+      "nodeId": "n37",
+      "source": {
+        "boundingBox": {
+          "x": 208,
+          "y": 258,
+          "width": 958,
+          "height": 221
+        },
+        "width": 958,
+        "height": 221,
+        "x": 208,
+        "y": 258,
+        "typography": {
+          "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+          "fontSize": "48px",
+          "fontWeight": "300",
+          "lineHeight": "55.2px",
+          "letterSpacing": "-0.96px",
+          "color": "rgb(129, 184, 26)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": null
+      },
+      "generated": null,
+      "mismatch": {
+        "x": null,
+        "y": null,
+        "width": null,
+        "height": null
+      },
+      "likelyCause": "source node missing from generated React tree"
+    },
+    {
+      "section": "hero-heading",
+      "nodeId": "n38",
+      "source": {
+        "boundingBox": {
+          "x": 208,
+          "y": 258,
+          "width": 958,
+          "height": 221
+        },
+        "width": 958,
+        "height": 221,
+        "x": 208,
+        "y": 258,
+        "typography": {
+          "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+          "fontSize": "48px",
+          "fontWeight": "300",
+          "lineHeight": "55.2px",
+          "letterSpacing": "-0.96px",
+          "color": "rgba(0, 14, 255, 0.5)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": null
+      },
+      "generated": null,
+      "mismatch": {
+        "x": null,
+        "y": null,
+        "width": null,
+        "height": null
+      },
+      "likelyCause": "source node missing from generated React tree"
+    },
+    {
+      "section": "content-section",
+      "nodeId": "n216",
+      "source": {
+        "boundingBox": {
+          "x": 0,
+          "y": 761,
+          "width": 1440,
+          "height": 2196
+        },
+        "width": 1440,
+        "height": 2196,
+        "x": 0,
+        "y": 761,
+        "typography": {
+          "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "textTransform": "none",
+          "textDecoration": "none"
+        },
+        "image": null
+      },
+      "generated": null,
+      "mismatch": {
+        "x": null,
+        "y": null,
+        "width": null,
+        "height": null
+      },
+      "likelyCause": "source node missing from generated React tree"
+    }
+  ],
+  "firstMajorDivergence": {
+    "section": "header",
+    "nodeId": "n2",
+    "source": {
+      "boundingBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 76
+      },
+      "width": 1440,
+      "height": 76,
+      "x": 0,
+      "y": 0,
+      "typography": {
+        "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)",
+        "textTransform": "none",
+        "textDecoration": "none"
+      },
+      "image": null
+    },
+    "generated": null,
+    "mismatch": {
+      "x": null,
+      "y": null,
+      "width": null,
+      "height": null
+    },
+    "likelyCause": "source node missing from generated React tree"
+  }
+}

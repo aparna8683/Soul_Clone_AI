@@ -50,12 +50,27 @@ export async function extractStructure(page) {
                 display: styles.display,
                 positionType: styles.position,
                 flexDirection: styles.flexDirection,
+                flexWrap: styles.flexWrap,
+                alignItems: styles.alignItems,
+                justifyContent: styles.justifyContent,
                 gridColumns,
                 borderRadius: styles.borderRadius,
                 padding: styles.padding,
+                margin: styles.margin,
                 gap: styles.gap,
                 overflow: styles.overflow,
-                color: styles.color
+                color: styles.color,
+                fontFamily: styles.fontFamily,
+                fontSize: styles.fontSize,
+                fontWeight: styles.fontWeight,
+                lineHeight: styles.lineHeight,
+                letterSpacing: styles.letterSpacing,
+                backgroundImage: styles.backgroundImage !== "none" ? styles.backgroundImage : null,
+                boxShadow: styles.boxShadow,
+                border: styles.border,
+                opacity: styles.opacity,
+                maxWidth: styles.maxWidth,
+                minHeight: styles.minHeight
             };
         };
 

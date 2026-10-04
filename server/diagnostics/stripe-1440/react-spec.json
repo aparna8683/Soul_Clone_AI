@@ -1,0 +1,123 @@
+{
+  "theme": {
+    "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+    "primaryColor": "#635bff",
+    "secondaryColor": "rgba(0, 0, 0, 0)",
+    "textColor": "rgb(0, 0, 0)",
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "typography": {
+      "h1": {
+        "tag": "h1",
+        "color": "rgb(129, 184, 26)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+        "fontSize": "48px",
+        "fontWeight": "300",
+        "lineHeight": "55.2px",
+        "letterSpacing": "-0.96px",
+        "margin": "0px",
+        "padding": "0px",
+        "borderRadius": "0px",
+        "display": "block",
+        "position": "relative"
+      },
+      "h2": {
+        "tag": "h2",
+        "color": "rgb(6, 27, 49)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+        "fontSize": "32px",
+        "fontWeight": "300",
+        "lineHeight": "35.2px",
+        "letterSpacing": "-0.64px",
+        "margin": "0px",
+        "padding": "0px",
+        "borderRadius": "0px",
+        "display": "inline",
+        "position": "static"
+      },
+      "p": {
+        "tag": "p",
+        "color": "rgb(100, 116, 141)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+        "fontSize": "32px",
+        "fontWeight": "300",
+        "lineHeight": "35.2px",
+        "letterSpacing": "-0.64px",
+        "margin": "0px",
+        "padding": "0px",
+        "borderRadius": "0px",
+        "display": "inline",
+        "position": "static"
+      },
+      "button": {
+        "tag": "button",
+        "color": "rgb(6, 27, 49)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "14px",
+        "letterSpacing": "normal",
+        "margin": "0px",
+        "padding": "12px 0px",
+        "borderRadius": "4px",
+        "display": "flex",
+        "position": "relative"
+      }
+    }
+  },
+  "sections": [
+    {
+      "type": "hero",
+      "title": "Financial infrastructure to grow your revenue. Accept payments, offer financial services and implement custom revenue models – from your first transaction to your billionth.",
+      "description": "Grow your business with a comprehensive set of payments and financial tools⁠ – designed to work individually or together.",
+      "buttons": [
+        {
+          "text": "Products",
+          "url": null
+        },
+        {
+          "text": "Solutions",
+          "url": null
+        }
+      ],
+      "layout": "center",
+      "columns": 4,
+      "background": "rgba(0, 0, 0, 0)",
+      "image": "assets/img-0",
+      "imageAspectRatio": "auto",
+      "visual": {
+        "minHeight": 560,
+        "contentWidth": 566.72,
+        "imageWidth": 1180,
+        "imagePosition": "below",
+        "imageOverlap": 24,
+        "spacing": "40px 16px"
+      },
+      "items": [],
+      "navItems": [],
+      "sourceGeometry": {
+        "width": 1232,
+        "height": 370,
+        "padding": "0px",
+        "gap": "40px 16px",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "backgroundImage": null,
+        "display": "grid",
+        "flexDirection": "row",
+        "gridColumns": 12,
+        "borderRadius": "0px",
+        "typography": {
+          "fontFamily": "sohne-var, \"SF Pro Display\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)"
+        }
+      }
+    }
+  ]
+}
