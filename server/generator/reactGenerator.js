@@ -629,7 +629,15 @@ function enrichReactSpec(reactSpec, websiteSpec) {
       type: "hero",
       title: h1.text,
       description: sourceParagraphs[0] || "",
-      buttons: sourceButtonsAll.slice(0, 2).map(({ text, url }) => ({ text, url: url || "#" })),
+      buttons: (() => {
+        const candidates = sourceButtonsAll.length
+          ? sourceButtonsAll
+          : sourceLinks.filter((link) => Number(link.y || 0) >= 140 && Number(link.y || 0) < 900);
+        return candidates.slice(0, 2).map(({ text, url, href }) => ({
+          text,
+          url: url || href || "#"
+        }));
+      })(),
       layout: "center",
       columns: 1,
       background: sourceHero?.backgroundColor || "",
@@ -774,7 +782,7 @@ function createAppComponent(reactSpec, websiteSpec) {
         const navItems = section.navItems || [];
 
         return `
-          <header className="navbar">
+          <header className="navbar ${reactSpec.navbarSticky ? "sticky" : ""}">
             <div className="navbar-inner">
 
               <a href="#top" className="brand">
@@ -1464,6 +1472,10 @@ img { max-width: 100%; display: block; }
   position: relative;
   z-index: 20;
   background: var(--background-color);
+}
+.navbar.sticky {
+  position: sticky;
+  top: 0;
 }
 .navbar-inner {
   max-width: var(--max-width);
