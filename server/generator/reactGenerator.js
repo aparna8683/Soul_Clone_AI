@@ -586,6 +586,70 @@ function enrichReactSpec(reactSpec, websiteSpec) {
     }
   }
 
+  // Content-preservation guard: AI may classify sections, but it must not
+  // accidentally delete source-visible navigation, hero copy, CTAs, or media.
+  const sourceHeadings = (websiteSpec.content?.headings || []).filter((item) => item?.text);
+  const sourceParagraphs = (websiteSpec.content?.paragraphs || []).filter(Boolean);
+  const sourceLinks = (websiteSpec.content?.links || []).filter((item) => item?.text);
+  const sourceButtonsAll = (websiteSpec.content?.buttons || []).filter((item) => item?.text);
+
+  const hasType = (type) => result.sections.some((section) => section?.type === type);
+
+  if (!hasType("navbar")) {
+    const navCandidates = sourceLinks
+      .filter((link) => Number(link.y || 0) < 180)
+      .slice(0, 10)
+      .map((link) => link.text)
+      .filter(Boolean);
+    if (navCandidates.length >= 2) {
+      result.sections.unshift({
+        type: "navbar",
+        title: "",
+        description: "",
+        buttons: [],
+        layout: "full",
+        columns: 1,
+        background: websiteSpec.design?.styles?.body?.backgroundColor || "",
+        image: "",
+        imageAspectRatio: "auto",
+        visual: {},
+        navItems: [...new Set(navCandidates)],
+        items: []
+      });
+    }
+  }
+
+  let hero = result.sections.find((section) => section?.type === "hero");
+  if (!hero && sourceHeadings.length) {
+    const h1 = sourceHeadings.find((heading) => heading.tag === "h1") || sourceHeadings[0];
+    const sourceHero = sourceSections.find((section) => Number(section?.position?.y || 0) < 900) || sourceSections[0];
+    const media = sourceHero?.media || [];
+    const preferred = [...media].sort((a, b) => (b.width * b.height) - (a.width * a.height))[0];
+    hero = {
+      type: "hero",
+      title: h1.text,
+      description: sourceParagraphs[0] || "",
+      buttons: sourceButtonsAll.slice(0, 2).map(({ text, url }) => ({ text, url: url || "#" })),
+      layout: "center",
+      columns: 1,
+      background: sourceHero?.backgroundColor || "",
+      image: preferred ? `assets/img-${preferred.assetIndex}` : "",
+      imageAspectRatio: preferred && preferred.width / Math.max(preferred.height, 1) > 1.7 ? "wide" : "auto",
+      visual: { minHeight: Number(sourceHero?.size?.height || 680), contentWidth: 900, imageWidth: preferred?.width || 1080, imagePosition: preferred ? "below" : "none", imageOverlap: 24 },
+      navItems: [],
+      items: []
+    };
+    result.sections.splice(hasType("navbar") ? 1 : 0, 0, hero);
+  } else if (hero) {
+    if (!hero.title) {
+      hero.title = (sourceHeadings.find((heading) => heading.tag === "h1") || sourceHeadings[0])?.text || "";
+    }
+    if (!hero.description) hero.description = sourceParagraphs[0] || "";
+    if (!Array.isArray(hero.buttons) || !hero.buttons.some((button) => button?.text)) {
+      hero.buttons = sourceButtonsAll.slice(0, 2).map(({ text, url }) => ({ text, url: url || "#" }));
+    }
+  }
+
   return result;
 }
 
@@ -1148,6 +1212,8 @@ function createAppComponent(reactSpec, websiteSpec) {
 
       /*
        * FALLBACK SECTION
+       *
+       * Unknown semantic types still render their source content.
        */
       return `
         <section
